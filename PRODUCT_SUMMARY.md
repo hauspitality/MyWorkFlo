@@ -44,9 +44,22 @@ It does not give unsafe repair guidance, invent arrival times, quote unsupported
 
 ## Pricing Direction
 
-The first commercial wedge is a Starter plan around $119/month that includes actual calendar booking, not just message-taking.
+Three tiers, mapped directly to fit (technician count) and automation level (the product's own draft / assisted / autopilot control modes):
 
-The pricing story is anchored to one recovered job paying for the month.
+| | Starter — $119/mo | Growth — $249/mo | Pro — $449/mo |
+|---|---|---|---|
+| Fit | 2–5 techs | 5–12 techs | 12–20 techs |
+| Automation | Draft mode — AI drafts every reply, owner/dispatcher approves & sends | Assisted — routine replies auto-send, bookings need one-tap approval | Autopilot — books jobs end-to-end; only emergencies/exceptions escalate to a human |
+| Seats | 1 (owner) | Up to 3 (owner + dispatcher + 1 tech) | Unlimited staff |
+| Volume | Soft cap (~150 conversations/mo) | Higher cap (~500/mo) | Unlimited |
+| Calendar booking | Included | Included | Included |
+| Bilingual (EN/ES) | Included | Included | Included |
+
+Calendar booking is included from the first paid tier, not gated as an upsell.
+
+Pricing is anchored to one recovered job paying for the month, and spacing across tiers is intentionally non-linear: a 12–20 tech shop has several times the revenue at risk of a 2-5 tech shop, so Pro should read as a rounding error against payroll rather than a flat per-seat markup. Growth is the expected default choice for most self-serve buyers.
+
+An annual option at roughly two months free (Starter effective ~$99/mo annual) is planned as a cash-flow/retention lever, independent of the tier structure above.
 
 ## Brand Feel
 
