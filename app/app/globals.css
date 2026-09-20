@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f5f3ee;
+  --card: #ffffff;
+  --ink: #17181a;
+  --ink-soft: #4a4a46;
+  --muted: #83837a;
+  --faint: #a6a69c;
+  --line: #e3ded0;
+  --line-strong: #d1c9b4;
+  --brass: #96692c;
+  --brass-deep: #6f4d20;
+  --brass-soft: #f1e6d3;
+  --accent-blue: #4f5fff;
+  --accent-blue-deep: #3a46d6;
+  --gauge-green: #2b6b47;
+  --gauge-green-soft: #e3eee1;
+  --gauge-red: #9c3821;
+  --gauge-red-soft: #f1dcd1;
+  --gauge-blue: #2b5e76;
+  --gauge-blue-soft: #dceaef;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-brass: var(--brass);
+  --color-brass-deep: var(--brass-deep);
+  --color-brass-soft: var(--brass-soft);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-blue-deep: var(--accent-blue-deep);
+  --color-gauge-green: var(--gauge-green);
+  --color-gauge-green-soft: var(--gauge-green-soft);
+  --color-gauge-red: var(--gauge-red);
+  --color-gauge-red-soft: var(--gauge-red-soft);
+  --color-gauge-blue: var(--gauge-blue);
+  --color-gauge-blue-soft: var(--gauge-blue-soft);
+  --font-sans: var(--font-switzer), ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-sans);
+}
