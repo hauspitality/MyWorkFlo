@@ -9,11 +9,17 @@
       content="MyWorkFlo helps HVAC companies answer every call, book service jobs, and get a human involved when urgent issues need one."
     />
     <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Newsreader:ital,wght@0,400;0,500;0,600;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="announcement">
-      <a href="#pricing">Booking included from $119/mo - set up in 10 minutes</a>
+      <a href="#pricing">Booking included from $119/mo, set up in about 10 minutes</a>
     </div>
 
     <header class="site-header">
@@ -34,120 +40,78 @@
     <main id="top">
       <section class="hero-section">
         <div class="hero-copy">
-          <p class="eyebrow">Self-serve AI front desk for HVAC teams</p>
-          <h1>Answer every call. Book the job. Get a human when it matters.</h1>
+          <h1><span class="muted-ink">Answer every call. Book the job.</span> Get a human when it matters.</h1>
           <p class="hero-subcopy">
             MyWorkFlo gives HVAC teams a 10-minute front door for missed calls,
             after-hours intake, emergency triage, English/Spanish response, and real
-            calendar booking without a demo funnel or software migration.
+            calendar booking, without a demo funnel or a software migration.
           </p>
           <div class="hero-actions" aria-label="Primary actions">
             <a class="button button-primary" href="#audit">Start lead audit</a>
             <a class="button button-secondary" href="#workflow">See the workflow</a>
           </div>
           <p class="cta-note">Start self-serve. Keep dispatch, safety, and pricing under human control.</p>
-          <dl class="hero-metrics" aria-label="Product proof points">
-            <div>
-              <dt>10 min</dt>
-              <dd>guided setup path</dd>
-            </div>
-            <div>
-              <dt>$119</dt>
-              <dd>booking tier target</dd>
-            </div>
-            <div>
-              <dt>2 langs</dt>
-              <dd>English and Spanish</dd>
-            </div>
-          </dl>
+
+          <div class="week-sample">
+            <p class="week-sample-label">Sample week for a six-tech shop</p>
+            <dl class="hero-metrics">
+              <div>
+                <dt>18</dt>
+                <dd>calls recovered</dd>
+              </div>
+              <div>
+                <dt>7</dt>
+                <dd>booked automatically</dd>
+              </div>
+              <div>
+                <dt>3</dt>
+                <dd>handed to a human</dd>
+              </div>
+            </dl>
+          </div>
         </div>
 
-        <div class="product-shell" aria-label="MyWorkFlo front desk preview">
-          <div class="window-bar">
-            <span></span>
-            <span></span>
-            <span></span>
-            <p>MyWorkFlo Workspace</p>
+        <div class="hero-visual">
+          <div class="job-ticket-ghost" aria-hidden="true"></div>
+          <div class="job-ticket" aria-label="Sample recovered call, ticket 04821">
+          <div class="ticket-perf" aria-hidden="true"></div>
+          <div class="ticket-head">
+            <span class="ticket-no">Ticket No. 04821</span>
+            <span class="ticket-type">Residential HVAC, after hours</span>
           </div>
-          <div class="dashboard-grid">
-            <aside class="dashboard-sidebar">
-              <p class="sidebar-label">Workspace</p>
-              <button class="sidebar-item active" type="button">Missed calls</button>
-              <button class="sidebar-item" type="button">After hours</button>
-              <button class="sidebar-item" type="button">Estimate follow-up</button>
-              <button class="sidebar-item" type="button">Needs review</button>
-            </aside>
-            <section class="dashboard-main">
-              <div class="agent-header">
-                <div>
-                  <p class="status-pill">Emergency triage on - booking allowed</p>
-                  <h2>HVAC Front Desk</h2>
-                </div>
-                <span class="health-score">Live</span>
-              </div>
-              <div class="lead-tabs" role="list" aria-label="Front desk stages">
-                <span role="listitem">Calls</span>
-                <span role="listitem">Qualification</span>
-                <span role="listitem">Booking</span>
-                <span role="listitem">Audit log</span>
-              </div>
-              <div class="lead-table" aria-label="Recent front-desk activity">
-                <div class="lead-table-head">
-                  <span>Lead</span>
-                  <span>Request</span>
-                  <span>Status</span>
-                  <span>Updated</span>
-                </div>
-                <article class="lead-row">
-                  <div>
-                    <strong>Sarah M.</strong>
-                    <span>Missed call recovered</span>
-                  </div>
-                  <p>No cooling - residential</p>
-                  <mark class="status success">Booked</mark>
-                  <time>08:04</time>
-                </article>
-                <article class="lead-row">
-                  <div>
-                    <strong>James R.</strong>
-                    <span>After-hours intake</span>
-                  </div>
-                  <p>Burning smell - escalation</p>
-                  <mark class="status review">Human handoff</mark>
-                  <time>08:11</time>
-                </article>
-                <article class="lead-row">
-                  <div>
-                    <strong>Casa Rivera</strong>
-                    <span>Spanish intake</span>
-                  </div>
-                  <p>Maintenance tune-up</p>
-                  <mark class="status draft">Booked</mark>
-                  <time>08:18</time>
-                </article>
-              </div>
-              <div class="insight-panel">
-                <div>
-                  <span>Revenue signal</span>
-                  <strong>Booking happens before the callback window closes</strong>
-                </div>
-                <p>Call answer, triage, booking, and handoff are visible in one audit trail.</p>
-              </div>
-              <div class="dashboard-footer">
-                <div>
-                  <span>Calls recovered</span>
-                  <strong>18</strong>
-                </div>
-                <div>
-                  <span>Visits booked</span>
-                  <strong>7</strong>
-                </div>
-                <div>
-                  <span>Human handoffs</span>
-                  <strong>3</strong>
-                </div>
-              </div>
-            </section>
+          <ol class="ticket-timeline">
+            <li>
+              <time>6:47 PM</time>
+              <p><strong>Call missed.</strong> Office line rang out after close.</p>
+            </li>
+            <li>
+              <time>6:47 PM</time>
+              <p><strong>MyWorkFlo answered by text.</strong> Caller reports no cooling.</p>
+            </li>
+            <li>
+              <time>6:49 PM</time>
+              <p><strong>Triaged.</strong> No emergency signals detected, standard repair.</p>
+            </li>
+            <li class="is-final">
+              <time>6:52 PM</time>
+              <p><strong>Booked.</strong> Tuesday 8:00 AM window confirmed by text.</p>
+            </li>
+          </ol>
+          <div class="ticket-stamp" aria-hidden="true">Booked</div>
+          <div class="ticket-foot">
+            <div>
+              <span>Job value</span>
+              <strong>$460 est.</strong>
+            </div>
+            <div>
+              <span>Response time</span>
+              <strong>38 sec</strong>
+            </div>
+            <div>
+              <span>Human needed</span>
+              <strong>No</strong>
+            </div>
+          </div>
           </div>
         </div>
       </section>
@@ -165,29 +129,22 @@
         </div>
       </section>
 
-      <section class="section gap-section" id="wedge" aria-labelledby="gap-title">
-        <div class="section-kicker">
-          <p class="eyebrow">The market opening</p>
-          <h2 id="gap-title">The incumbents leave the same high-intent gaps open.</h2>
-        </div>
-        <div class="gap-grid">
+      <section class="section manifest-section" id="wedge" aria-labelledby="gap-title">
+        <h2 id="gap-title">The incumbents leave the same high-intent gaps open.</h2>
+        <div class="manifest-grid">
           <article>
-            <span>01</span>
             <h3>Self-serve front door</h3>
             <p>Contractors should not need a sales demo just to answer missed calls and connect a calendar.</p>
           </article>
           <article>
-            <span>02</span>
             <h3>Booking before the paywall</h3>
             <p>A message-only assistant still loses the job. MyWorkFlo leads with actual calendar booking.</p>
           </article>
           <article>
-            <span>03</span>
             <h3>Emergency-keyword triage</h3>
             <p>Gas smell, flooding, sparking, burning smell, and unsafe uncertainty move to human handoff.</p>
           </article>
           <article>
-            <span>04</span>
             <h3>English and Spanish</h3>
             <p>Bilingual intake is treated as a core booking feature, not a late enterprise upsell.</p>
           </article>
@@ -196,37 +153,31 @@
 
       <section class="section section-split">
         <div>
-          <p class="eyebrow">The product wedge</p>
           <h2>Not an AI platform for contractors. A front desk for lost revenue.</h2>
-        </div>
-        <div class="wedge-panel">
           <p>
             Home-service teams already have scheduling, dispatch, estimates, invoicing, and CRM tools.
             MyWorkFlo starts with the leak those tools do not always solve: the customer who calls
             while the owner is driving, the tech is on a job, or the office is closed.
           </p>
-          <figure class="photo-frame owner-photo">
-            <img
-              src="assets/hvac-owner-office.jpg"
-              alt="HVAC business owner reviewing service calls at a laptop in a dispatch office"
-              width="2752"
-              height="1536"
-              loading="lazy"
-              decoding="async"
-            />
-            <figcaption>
-              <span>Office reality</span>
-              <strong>Calls arrive while the owner is already handling the day.</strong>
-            </figcaption>
-          </figure>
         </div>
+        <figure class="photo-frame owner-photo">
+          <img
+            src="assets/hvac-owner-office.jpg"
+            alt="HVAC business owner reviewing service calls at a laptop in a dispatch office"
+            width="2752"
+            height="1536"
+            loading="lazy"
+            decoding="async"
+          />
+          <figcaption>
+            <span>Office reality</span>
+            <strong>Calls arrive while the owner is already handling the day.</strong>
+          </figcaption>
+        </figure>
       </section>
 
       <section class="section numbers-section" aria-labelledby="numbers-title">
-        <div class="section-kicker">
-          <p class="eyebrow">Built for the first market</p>
-          <h2 id="numbers-title">Designed around the HVAC shops where missed calls already hurt.</h2>
-        </div>
+        <h2 id="numbers-title">Designed around the HVAC shops where missed calls already hurt.</h2>
         <div class="numbers-grid">
           <article>
             <strong>10 min</strong>
@@ -252,23 +203,17 @@
       </section>
 
       <section class="section principles-section" aria-labelledby="principles-title">
-        <div class="section-kicker">
-          <p class="eyebrow">Everything it needs to be</p>
-          <h2 id="principles-title">Fast enough to win the lead. Controlled enough to trust.</h2>
-        </div>
+        <h2 id="principles-title">Fast enough to win the lead. Controlled enough to trust.</h2>
         <div class="principles-grid">
           <article>
-            <span class="principle-index">01</span>
             <h3>Self-serve</h3>
             <p>Connect phone, SMS, calendar, service area, emergency rules, and language preferences without a demo gate.</p>
           </article>
           <article>
-            <span class="principle-index">02</span>
             <h3>Trade-native</h3>
             <p>Uses HVAC-specific intake paths for no cooling, no heating, tune-ups, replacements, and emergency signals.</p>
           </article>
           <article>
-            <span class="principle-index">03</span>
             <h3>Human-aware</h3>
             <p>Escalates urgent or uncertain cases, follows approved scripts, and gets a real person on the line when it matters.</p>
           </article>
@@ -277,10 +222,7 @@
 
       <section class="section" id="workflow">
         <div class="section-heading">
-          <div>
-            <p class="eyebrow">Revenue-recovery workflows</p>
-            <h2>Start with one trade-native workflow, then expand only after it works.</h2>
-          </div>
+          <h2>Start with one trade-native workflow, then expand only after it works.</h2>
           <div class="filter-group" aria-label="Filter workflows">
             <button class="filter-button active" type="button" data-filter="all">All</button>
             <button class="filter-button" type="button" data-filter="intake">Intake</button>
@@ -291,10 +233,7 @@
 
         <div class="agent-grid" id="agentGrid">
           <article class="agent-card" data-category="intake">
-            <div class="agent-card-top">
-              <span class="agent-initial green">M</span>
-              <span>Intake</span>
-            </div>
+            <span class="agent-tab gauge-green">Intake</span>
             <h3>Missed-call text-back</h3>
             <p>Sends an approved SMS when a caller hangs up or voicemail would otherwise take over.</p>
             <ul>
@@ -304,10 +243,7 @@
             </ul>
           </article>
           <article class="agent-card" data-category="intake">
-            <div class="agent-card-top">
-              <span class="agent-initial blue">A</span>
-              <span>Intake</span>
-            </div>
+            <span class="agent-tab gauge-blue">Intake</span>
             <h3>After-hours AI receptionist</h3>
             <p>Answers overflow calls, collects the right details, and routes emergencies to a person.</p>
             <ul>
@@ -317,10 +253,7 @@
             </ul>
           </article>
           <article class="agent-card" data-category="booking">
-            <div class="agent-card-top">
-              <span class="agent-initial amber">H</span>
-              <span>Booking</span>
-            </div>
+            <span class="agent-tab gauge-red">Booking</span>
             <h3>Emergency-keyword triage</h3>
             <p>Listens for urgent HVAC and safety language before the workflow continues toward booking.</p>
             <ul>
@@ -330,10 +263,7 @@
             </ul>
           </article>
           <article class="agent-card" data-category="booking">
-            <div class="agent-card-top">
-              <span class="agent-initial slate">B</span>
-              <span>Booking</span>
-            </div>
+            <span class="agent-tab gauge-brass">Booking</span>
             <h3>Calendar booking</h3>
             <p>Books approved service windows when the request, location, language, and availability match.</p>
             <ul>
@@ -343,10 +273,7 @@
             </ul>
           </article>
           <article class="agent-card" data-category="followup">
-            <div class="agent-card-top">
-              <span class="agent-initial green">E</span>
-              <span>Follow-up</span>
-            </div>
+            <span class="agent-tab gauge-green">Follow-up</span>
             <h3>Estimate follow-up</h3>
             <p>Follows up on sent estimates with a customer-approved cadence before they go cold.</p>
             <ul>
@@ -356,10 +283,7 @@
             </ul>
           </article>
           <article class="agent-card" data-category="followup">
-            <div class="agent-card-top">
-              <span class="agent-initial blue">R</span>
-              <span>Follow-up</span>
-            </div>
+            <span class="agent-tab gauge-blue">Follow-up</span>
             <h3>Bilingual response</h3>
             <p>Answers and qualifies callers in English or Spanish, then hands clean job context to the office.</p>
             <ul>
@@ -373,7 +297,7 @@
 
       <section class="section audit-section" id="audit">
         <div class="audit-copy">
-          <p class="eyebrow">Free Missed Call & Booking Audit</p>
+          <p class="audit-kicker">Free Missed Call &amp; Booking Audit</p>
           <h2>See whether booking should be included on day one.</h2>
           <p>
             Use the contractor's own call volume and job economics to create a plain scenario.
@@ -382,6 +306,10 @@
           </p>
         </div>
         <form class="audit-panel" id="auditForm">
+          <div class="audit-panel-head">
+            <span>Work order intake</span>
+            <span class="ticket-no">Form 04822</span>
+          </div>
           <label>
             Trade focus
             <select id="tradeSelect" name="trade">
@@ -443,24 +371,21 @@
 
       <section class="section how-section">
         <div class="section-heading">
-          <div>
-            <p class="eyebrow">How it works</p>
-            <h2>A conservative path from self-serve setup to booked work.</h2>
-          </div>
+          <h2>A conservative path from self-serve setup to booked work.</h2>
         </div>
         <div class="steps-grid">
           <article>
-            <span>01</span>
+            <span class="stage-pill">Stage 1</span>
             <h3>Launch self-serve</h3>
             <p>Define service area, hours, appointment types, emergency keywords, language rules, and allowed booking windows.</p>
           </article>
           <article>
-            <span>02</span>
+            <span class="stage-pill">Stage 2</span>
             <h3>Answer and triage</h3>
             <p>Respond to missed and after-hours calls, detect urgent language, and get a human involved when it matters.</p>
           </article>
           <article>
-            <span>03</span>
+            <span class="stage-pill">Stage 3</span>
             <h3>Book or hand off</h3>
             <p>Book approved slots, send confirmations, or create a dispatcher task when human judgment is needed.</p>
           </article>
@@ -477,7 +402,6 @@
             />
           </figure>
           <div class="outcome-copy">
-            <p class="eyebrow">The outcome</p>
             <h3>A caller becomes a scheduled service visit, with the office still in control.</h3>
             <p>
               MyWorkFlo is designed to move only the first stage faster: respond, qualify,
@@ -489,25 +413,22 @@
 
       <section class="section modes-section">
         <div class="section-heading">
-          <div>
-            <p class="eyebrow">Control modes</p>
-            <h2>Let contractors choose how much autonomy they trust.</h2>
-          </div>
+          <h2>Let contractors choose how much autonomy they trust.</h2>
         </div>
-        <div class="steps-grid">
+        <div class="steps-grid modes-grid">
           <article>
-            <span>Draft</span>
-            <h3>Capture and prepare</h3>
+            <span class="mode-dot mode-dot--draft"></span>
+            <h3>Draft. Capture and prepare</h3>
             <p>MyWorkFlo collects details and drafts replies, but staff approve every customer message.</p>
           </article>
           <article>
-            <span>Assisted</span>
-            <h3>Text and qualify</h3>
+            <span class="mode-dot mode-dot--assisted"></span>
+            <h3>Assisted. Text and qualify</h3>
             <p>The AI can respond and qualify leads while booking, dispatch, or price exceptions wait for approval.</p>
           </article>
           <article>
-            <span>Autopilot</span>
-            <h3>Book inside boundaries</h3>
+            <span class="mode-dot mode-dot--autopilot"></span>
+            <h3>Autopilot. Book inside boundaries</h3>
             <p>Approved appointment types can be booked automatically when rules, availability, and service area match.</p>
           </article>
         </div>
@@ -515,16 +436,16 @@
 
       <section class="section pricing-section" id="pricing">
         <div class="section-heading">
-          <div>
-            <p class="eyebrow">Pricing path</p>
-            <h2>Booking included before the price jumps.</h2>
-          </div>
+          <h2>Booking included before the price jumps.</h2>
         </div>
         <div class="pricing-grid">
           <article class="price-card">
-            <span class="plan-name">Starter</span>
-            <h3>$119/mo</h3>
-            <p>For solo operators who need missed-call recovery and real calendar booking.</p>
+            <div class="price-card-head">
+              <span class="plan-name">Starter</span>
+              <h3>$119/mo</h3>
+              <p>For solo operators who need missed-call recovery and real calendar booking.</p>
+            </div>
+            <div class="ticket-tear" aria-hidden="true"></div>
             <ul>
               <li>Missed-call text-back</li>
               <li>Calendar booking</li>
@@ -535,9 +456,12 @@
             <a class="button button-secondary" href="#audit">Audit my calls</a>
           </article>
           <article class="price-card highlighted">
-            <span class="plan-name">Growth</span>
-            <h3>$299/mo</h3>
-            <p>For 2 to 10 tech businesses that need after-hours coverage and office approval controls.</p>
+            <div class="price-card-head">
+              <span class="plan-name">Growth</span>
+              <h3>$299/mo</h3>
+              <p>For 2 to 10 tech businesses that need after-hours coverage and office approval controls.</p>
+            </div>
+            <div class="ticket-tear" aria-hidden="true"></div>
             <ul>
               <li>AI call coverage</li>
               <li>Assisted booking</li>
@@ -548,9 +472,12 @@
             <a class="button button-primary" href="#audit">Start with Growth</a>
           </article>
           <article class="price-card">
-            <span class="plan-name">Pro</span>
-            <h3>$599/mo</h3>
-            <p>For multi-tech teams with more numbers, locations, routing rules, and integrations.</p>
+            <div class="price-card-head">
+              <span class="plan-name">Pro</span>
+              <h3>$599/mo</h3>
+              <p>For multi-tech teams with more numbers, locations, routing rules, and integrations.</p>
+            </div>
+            <div class="ticket-tear" aria-hidden="true"></div>
             <ul>
               <li>Multiple numbers or locations</li>
               <li>CRM or field-service sync</li>
@@ -564,7 +491,6 @@
 
       <section class="section security-section" id="safety">
         <div>
-          <p class="eyebrow">Safety and trust</p>
           <h2>AI front desk, not uncontrolled dispatch.</h2>
           <p>
             Home services can be urgent and safety-sensitive. The first version should be explicit
@@ -574,18 +500,22 @@
         </div>
         <div class="security-grid">
           <article>
+            <span class="gauge-dot gauge-red"></span>
             <h3>Emergency triage</h3>
             <p>Gas smell, flooding, sparking, burning smell, angry caller, warranty issue, or unclear request routes to staff.</p>
           </article>
           <article>
+            <span class="gauge-dot gauge-brass"></span>
             <h3>Approved scripts</h3>
             <p>The owner controls trade questions, safety language, follow-up timing, and opt-out text.</p>
           </article>
           <article>
+            <span class="gauge-dot gauge-blue"></span>
             <h3>Conversation logs</h3>
             <p>Every call, text, source, decision, handoff, and booking attempt is visible for review.</p>
           </article>
           <article>
+            <span class="gauge-dot gauge-green"></span>
             <h3>Long-tail ready</h3>
             <p>If the shop has no website or field-service integration yet, leads can still route by SMS, email, or CSV.</p>
           </article>
@@ -593,7 +523,6 @@
       </section>
 
       <section class="final-cta">
-        <p class="eyebrow">Launch sentence</p>
         <h2>Answers every call, books the job, and gets a human on the line when it matters.</h2>
         <a class="button button-primary" href="#audit">Run the lead-speed audit</a>
       </section>
