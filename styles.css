@@ -1,3 +1,35 @@
+@font-face {
+  font-family: "Switzer";
+  src: url("assets/fonts/Switzer-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Switzer";
+  src: url("assets/fonts/Switzer-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Switzer";
+  src: url("assets/fonts/Switzer-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Switzer";
+  src: url("assets/fonts/Switzer-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --paper: #f5f3ee;
   --paper-alt: #eeeade;
@@ -20,7 +52,7 @@
   --shadow: 0 24px 60px rgba(23, 24, 26, 0.09);
   --shadow-tight: 0 10px 28px rgba(23, 24, 26, 0.08);
   --font-display: "Newsreader", Georgia, "Times New Roman", serif;
-  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: "Switzer", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   color-scheme: light;
 }
@@ -42,7 +74,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-body,
 button,
 input,
 select {
