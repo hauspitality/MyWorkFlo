@@ -1,18 +1,19 @@
-import type Anthropic from "@anthropic-ai/sdk";
 import { HVAC_ISSUE_TYPES } from "@/lib/hvac/taxonomy";
 import type { AppointmentType, Business, ServiceSettings } from "@/lib/supabase/types";
 
 /**
  * Three-layer prompt, matching the plan's config architecture:
  *
- *   Layer A: platform constitution — identical for every business, cached
- *            with Anthropic prompt caching since it never changes per-
- *            request (this matters for cost at high SMS-turn volume).
- *   Layer B: this business's profile — cached per-business, changes only
- *            when settings are edited.
+ *   Layer A: platform constitution — identical for every business. The
+ *            Anthropic provider wraps this with prompt caching since it
+ *            never changes per-request (this matters for cost at high
+ *            SMS-turn volume); returned as plain text here so it stays
+ *            usable by any provider.
+ *   Layer B: this business's profile — changes only when settings are
+ *            edited.
  *   Layer C: live conversation state — NOT part of the system prompt at
  *            all (see context.ts); re-injected fresh each turn so it never
- *            breaks the Layer A/B cache prefix.
+ *            breaks the Layer A/B cache prefix (Anthropic provider only).
  */
 
 const ISSUE_TAXONOMY_TABLE = HVAC_ISSUE_TYPES.map(
@@ -38,19 +39,15 @@ QUALIFYING, NOT INTERROGATING: ask one or two things at a time, in natural langu
 
 LANGUAGE: reply in whichever language the customer is writing in. If they mix English and Spanish, match their most recent message.`;
 
-export function buildConstitutionBlock(): Anthropic.TextBlockParam {
-  return {
-    type: "text",
-    text: CONSTITUTION,
-    cache_control: { type: "ephemeral" },
-  };
+export function buildConstitutionBlock(): string {
+  return CONSTITUTION;
 }
 
 export function buildBusinessProfileBlock(
   business: Pick<Business, "name" | "timezone">,
   serviceSettings: Pick<ServiceSettings, "business_hours" | "service_area" | "languages" | "ai_persona_name">,
   appointmentTypes: Array<Pick<AppointmentType, "id" | "name" | "duration_minutes" | "hvac_issue_codes">>,
-): Anthropic.TextBlockParam {
+): string {
   const apptList = appointmentTypes
     .map((a) => `  - ${a.name} (id: ${a.id}, ${a.duration_minutes} min) — for: ${a.hvac_issue_codes.join(", ") || "any issue"}`)
     .join("\n");
@@ -65,9 +62,5 @@ ${serviceSettings.ai_persona_name ? `Sign off as: ${serviceSettings.ai_persona_n
 Appointment types (use these exact ids with check_availability / get_pricing_guidance):
 ${apptList || "  (none configured yet — set needs_human=true and let the customer know someone will follow up)"}`;
 
-  return {
-    type: "text",
-    text,
-    cache_control: { type: "ephemeral" },
-  };
+  return text;
 }

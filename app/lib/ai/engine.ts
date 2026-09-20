@@ -1,22 +1,13 @@
 import "server-only";
-import Anthropic from "@anthropic-ai/sdk";
-import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
 import { detectEmergencySignal, type EmergencyCategory } from "@/lib/hvac/emergencySignals";
 import { getEmergencyScript } from "@/lib/hvac/emergencyScripts";
 import { buildBusinessProfileBlock, buildConstitutionBlock } from "./systemPrompt";
 import { buildStateSummary, type ConversationContext } from "./context";
 import { ALL_TOOLS, executeInfoTool } from "./tools";
+import { getAiProvider } from "./providers";
 import type { AiDecisionMetadata } from "@/lib/supabase/types";
 
-// Sonnet by default while conversation quality is being validated against
-// real customers. Once that's proven out, this is the one line to change
-// to evaluate a cheaper model (Haiku) for cost at volume — the same
-// pattern used elsewhere for well-defined, high-volume, low-complexity
-// tasks once accuracy is established.
-const MODEL = "claude-sonnet-5";
 const MAX_TOOL_ITERATIONS = 6;
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export interface TurnResult {
   decision: AiDecisionMetadata;
@@ -45,9 +36,10 @@ function buildEmergencyDecision(
 
 /**
  * Runs one turn of the conversation: Layer 1 deterministic emergency check,
- * then (if clear) a full model turn with tool use, looping until the model
- * calls respond_to_customer or flag_emergency. Does not persist anything —
- * the caller (dev simulator today, the Twilio webhook route later) is
+ * then (if clear) a full model turn with tool use via whichever provider is
+ * configured (see providers/index.ts), looping until the model calls
+ * respond_to_customer or flag_emergency. Does not persist anything — the
+ * caller (dev simulator today, the Twilio webhook route later) is
  * responsible for writing messages/audit_log and running decide-action.ts
  * against the returned decision.
  */
@@ -66,95 +58,40 @@ export async function runTurn(context: ConversationContext, inboundText: string)
     };
   }
 
-  const system = [
-    buildConstitutionBlock(),
-    buildBusinessProfileBlock(context.business, context.serviceSettings, context.appointmentTypes),
-  ];
+  const provider = getAiProvider();
+  const toolContext = { businessId: context.business.id };
 
-  const messages: MessageParam[] = context.history.map((m) => ({
-    role: m.sender === "customer" ? "user" : "assistant",
-    content: m.body,
-  }));
-
-  messages.push({
-    role: "user",
-    content: `${buildStateSummary(context)}\n${inboundText}`,
+  const outcome = await provider.runConversationLoop({
+    systemBlocks: [
+      buildConstitutionBlock(),
+      buildBusinessProfileBlock(context.business, context.serviceSettings, context.appointmentTypes),
+    ],
+    history: context.history.map((m) => ({
+      role: m.sender === "customer" ? "user" : "assistant",
+      content: m.body,
+    })),
+    latestUserMessage: `${buildStateSummary(context)}\n${inboundText}`,
+    tools: ALL_TOOLS,
+    executeTool: (name, input) => executeInfoTool(name, input, toolContext),
+    maxIterations: MAX_TOOL_ITERATIONS,
   });
 
-  const toolContext = { businessId: context.business.id };
-  const calledTools: string[] = [];
+  if (outcome.kind === "emergency") {
+    const input = outcome.emergencyInput as { category: EmergencyCategory; evidence_quote: string };
+    return {
+      decision: buildEmergencyDecision(input.category, context.business.name, fallbackLanguage),
+      shortCircuited: true,
+      toolCallsThisTurn: outcome.toolCallsThisTurn,
+    };
+  }
 
-  for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
-    const response = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 1024,
-      system,
-      messages,
-      tools: ALL_TOOLS,
-      tool_choice: { type: "auto" },
-    });
-
-    const toolUseBlocks = response.content.filter((block) => block.type === "tool_use");
-
-    const emergencyCall = toolUseBlocks.find((block) => block.name === "flag_emergency");
-    if (emergencyCall) {
-      const input = emergencyCall.input as { category: EmergencyCategory; evidence_quote: string };
-      return {
-        decision: buildEmergencyDecision(input.category, context.business.name, fallbackLanguage),
-        shortCircuited: true,
-        toolCallsThisTurn: calledTools,
-      };
-    }
-
-    const respondCall = toolUseBlocks.find((block) => block.name === "respond_to_customer");
-    if (respondCall) {
-      const input = respondCall.input as Omit<AiDecisionMetadata, "emergency_flag" | "tool_calls">;
-      return {
-        decision: {
-          ...input,
-          emergency_flag: false,
-        },
-        shortCircuited: false,
-        toolCallsThisTurn: calledTools,
-      };
-    }
-
-    // Otherwise, execute the info-tool calls and loop with their results.
-    if (toolUseBlocks.length === 0) {
-      // Model produced only text with no tool call at all — nudge it back
-      // toward the required contract rather than silently dropping the turn.
-      messages.push({ role: "assistant", content: response.content });
-      messages.push({
-        role: "user",
-        content: "You must call respond_to_customer (or flag_emergency) to finish your turn.",
-      });
-      continue;
-    }
-
-    messages.push({ role: "assistant", content: response.content });
-    calledTools.push(...toolUseBlocks.map((block) => block.name));
-
-    const toolResults = await Promise.all(
-      toolUseBlocks.map(async (block) => {
-        try {
-          const result = await executeInfoTool(block.name, block.input as Record<string, unknown>, toolContext);
-          return {
-            type: "tool_result" as const,
-            tool_use_id: block.id,
-            content: JSON.stringify(result),
-          };
-        } catch (err) {
-          return {
-            type: "tool_result" as const,
-            tool_use_id: block.id,
-            content: `Error: ${err instanceof Error ? err.message : "tool failed"}`,
-            is_error: true,
-          };
-        }
-      }),
-    );
-
-    messages.push({ role: "user", content: toolResults });
+  if (outcome.kind === "respond") {
+    const input = outcome.respondInput as Omit<AiDecisionMetadata, "emergency_flag" | "tool_calls">;
+    return {
+      decision: { ...input, emergency_flag: false },
+      shortCircuited: false,
+      toolCallsThisTurn: outcome.toolCallsThisTurn,
+    };
   }
 
   // Hit the iteration cap without a final decision — fail toward a human
@@ -170,6 +107,6 @@ export async function runTurn(context: ConversationContext, inboundText: string)
       needs_human_reason: "Exceeded max tool iterations without a final decision.",
     },
     shortCircuited: false,
-    toolCallsThisTurn: calledTools,
+    toolCallsThisTurn: outcome.toolCallsThisTurn,
   };
 }

@@ -1,7 +1,7 @@
-import type Anthropic from "@anthropic-ai/sdk";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isWeatherElevated } from "@/lib/weather";
 import type { AppointmentType, PricingGuidance, ServiceSettings } from "@/lib/supabase/types";
+import type { ToolSpec } from "./providers/types";
 
 /**
  * Tool set for the AI conversation engine. Two categories, deliberately
@@ -32,11 +32,11 @@ export interface ToolContext {
 
 const jsonSchema = <T extends Record<string, unknown>>(schema: T) => schema;
 
-export const INFO_TOOLS: Anthropic.Tool[] = [
+export const INFO_TOOLS: ToolSpec[] = [
   {
     name: "get_appointment_types",
     description:
-      "Look up this business's real appointment types (with pricing guidance). Call this before ever mentioning what kinds of visits are available or discussing price.",
+      "Look up this business's real appointment types. Call this before ever mentioning what kinds of visits are available. Each result says whether pricing guidance exists (has_pricing_guidance) but not the actual number — you must call get_pricing_guidance separately before stating any price.",
     input_schema: jsonSchema({
       type: "object",
       properties: {
@@ -86,7 +86,7 @@ export const INFO_TOOLS: Anthropic.Tool[] = [
   },
 ];
 
-export const FLAG_EMERGENCY_TOOL: Anthropic.Tool = {
+export const FLAG_EMERGENCY_TOOL: ToolSpec = {
   name: "flag_emergency",
   description:
     "Call this IMMEDIATELY if anything in the conversation could plausibly indicate gas, carbon monoxide, fire, sparking, or flooding-near-electrical — even if you're not fully certain. Err toward flagging: a false alarm costs a human a few minutes, a missed signal could cost a life. Do not continue asking qualifying questions once you're calling this — stop and call it now.",
@@ -119,7 +119,7 @@ export const FLAG_EMERGENCY_TOOL: Anthropic.Tool = {
  * lib/supabase/types.ts AiDecisionMetadata for the persisted shape this
  * maps onto.
  */
-export const RESPOND_TOOL: Anthropic.Tool = {
+export const RESPOND_TOOL: ToolSpec = {
   name: "respond_to_customer",
   description:
     "Finish your turn by calling this with the message to send the customer and your structured read of the conversation so far. This is required — you must always end by calling this tool (unless you called flag_emergency instead).",
@@ -171,21 +171,29 @@ export const RESPOND_TOOL: Anthropic.Tool = {
   strict: true,
 };
 
-export const ALL_TOOLS: Anthropic.Tool[] = [...INFO_TOOLS, FLAG_EMERGENCY_TOOL, RESPOND_TOOL];
+export const ALL_TOOLS: ToolSpec[] = [...INFO_TOOLS, FLAG_EMERGENCY_TOOL, RESPOND_TOOL];
 
 // ============================================================================
 // Handlers for the read-only info tools. flag_emergency and
 // respond_to_customer are handled specially by the engine, not here.
 // ============================================================================
 
-interface AppointmentTypeWithPricing extends AppointmentType {
-  pricing: PricingGuidance | null;
+interface AppointmentTypeWithPricingFlag extends AppointmentType {
+  // Deliberately a boolean, not the actual price range/display text: this
+  // tool must NOT be a legitimate source of a dollar figure, only
+  // get_pricing_guidance is (see its description, and outputGuardrails.ts
+  // which only whitelists that tool name). A prior version embedded the
+  // full pricing_guidance row here, which let the model correctly quote a
+  // real price without calling get_pricing_guidance — the guardrail then
+  // (correctly, per its own rules) flagged a true, sourced price as
+  // unsourced, kicking every pricing-adjacent reply to staff approval.
+  has_pricing_guidance: boolean;
 }
 
 export async function getAppointmentTypes(
   ctx: ToolContext,
   input: { issue_code?: string },
-): Promise<AppointmentTypeWithPricing[]> {
+): Promise<AppointmentTypeWithPricingFlag[]> {
   const supabase = createServiceClient();
   let query = supabase
     .from("appointment_types")
@@ -202,9 +210,9 @@ export async function getAppointmentTypes(
     ? rows.filter((row) => row.hvac_issue_codes.includes(input.issue_code!))
     : rows;
 
-  return filtered.map((row) => ({
+  return filtered.map(({ pricing_guidance, ...row }) => ({
     ...row,
-    pricing: row.pricing_guidance?.[0] ?? null,
+    has_pricing_guidance: Boolean(pricing_guidance?.[0]),
   }));
 }
 
