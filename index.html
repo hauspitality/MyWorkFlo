@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Newsreader:ital,wght@0,400;0,500;0,600;1,500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
@@ -24,7 +24,22 @@
 
     <header class="site-header">
       <a class="brand" href="#top" aria-label="MyWorkFlo home">
-        <span class="brand-mark" aria-hidden="true">M</span>
+        <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="37" fill="none" stroke="#96692c" stroke-width="7" />
+          <line x1="50" y1="10" x2="50" y2="22" stroke="#96692c" stroke-width="7" stroke-linecap="round" />
+          <line x1="24" y1="22" x2="31" y2="29" stroke="#96692c" stroke-width="7" stroke-linecap="round" />
+          <line x1="76" y1="22" x2="69" y2="29" stroke="#96692c" stroke-width="7" stroke-linecap="round" />
+          <line x1="50" y1="50" x2="67" y2="28" stroke="#96692c" stroke-width="7" stroke-linecap="round" />
+          <circle cx="50" cy="50" r="7" fill="#96692c" />
+          <polyline
+            points="18,64 35,42 50,60 65,42 82,64"
+            fill="none"
+            stroke="#96692c"
+            stroke-width="7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
         <span>MyWorkFlo</span>
       </a>
       <nav class="nav-links" aria-label="Main navigation">
@@ -167,7 +182,7 @@
         </div>
       </section>
 
-      <section class="section principles-section" aria-labelledby="principles-title">
+      <section class="section principles-section" id="principles" aria-labelledby="principles-title">
         <h2 id="principles-title">Fast enough to win the lead. Controlled enough to trust.</h2>
         <div class="principles-grid">
           <article>
@@ -354,7 +369,7 @@
         </form>
       </section>
 
-      <section class="section how-section">
+      <section class="section how-section" id="how">
         <div class="section-heading">
           <h2>A conservative path from self-serve setup to booked work.</h2>
         </div>
@@ -396,7 +411,7 @@
         </div>
       </section>
 
-      <section class="section modes-section">
+      <section class="section modes-section" id="modes">
         <div class="section-heading">
           <h2>Let contractors choose how much autonomy they trust.</h2>
         </div>
@@ -520,18 +535,39 @@
             <span class="footer-links-label">Explore</span>
             <a href="#wedge">Wedge</a>
             <a href="#workflow">Workflow</a>
-            <a href="#safety">Safety</a>
+            <a href="#how">How it works</a>
           </nav>
           <nav class="footer-links" aria-label="Get started">
             <span class="footer-links-label">Get started</span>
             <a href="#audit">Free audit</a>
             <a href="#pricing">Pricing</a>
+            <a href="#safety">Safety</a>
+          </nav>
+          <nav class="footer-links" aria-label="More">
+            <span class="footer-links-label">More</span>
+            <a href="#principles">Principles</a>
+            <a href="#modes">Control modes</a>
           </nav>
         </div>
       </div>
       <div class="footer-bottom">
         <a class="brand" href="#top" aria-label="MyWorkFlo home">
-          <span class="brand-mark" aria-hidden="true">M</span>
+          <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="37" fill="none" stroke="#96692c" stroke-width="7" />
+          <line x1="50" y1="10" x2="50" y2="22" stroke="#96692c" stroke-width="7" stroke-linecap="round" />
+          <line x1="24" y1="22" x2="31" y2="29" stroke="#96692c" stroke-width="7" stroke-linecap="round" />
+          <line x1="76" y1="22" x2="69" y2="29" stroke="#96692c" stroke-width="7" stroke-linecap="round" />
+          <line x1="50" y1="50" x2="67" y2="28" stroke="#96692c" stroke-width="7" stroke-linecap="round" />
+          <circle cx="50" cy="50" r="7" fill="#96692c" />
+          <polyline
+            points="18,64 35,42 50,60 65,42 82,64"
+            fill="none"
+            stroke="#96692c"
+            stroke-width="7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
           <span>MyWorkFlo</span>
         </a>
         <p>AI front desk for home-service revenue recovery.</p>

@@ -30,6 +30,22 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Zodiak";
+  src: url("assets/fonts/Zodiak-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Zodiak";
+  src: url("assets/fonts/Zodiak-VariableItalic.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
 :root {
   --paper: #f5f3ee;
   --paper-alt: #eeeade;
@@ -43,6 +59,8 @@
   --brass: #96692c;
   --brass-deep: #6f4d20;
   --brass-soft: #f1e6d3;
+  --accent-blue: #4f5fff;
+  --accent-blue-deep: #3a46d6;
   --gauge-green: #2b6b47;
   --gauge-green-soft: #e3eee1;
   --gauge-red: #9c3821;
@@ -51,7 +69,7 @@
   --gauge-blue-soft: #dceaef;
   --shadow: 0 24px 60px rgba(23, 24, 26, 0.09);
   --shadow-tight: 0 10px 28px rgba(23, 24, 26, 0.08);
-  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-display: "Zodiak", Georgia, "Times New Roman", serif;
   --font-body: "Switzer", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   color-scheme: light;
@@ -99,7 +117,7 @@ a:focus-visible,
 button:focus-visible,
 select:focus-visible,
 input:focus-visible {
-  outline: 3px solid rgba(150, 105, 44, 0.35);
+  outline: 3px solid rgba(79, 95, 255, 0.4);
   outline-offset: 3px;
 }
 
@@ -215,16 +233,9 @@ p {
 }
 
 .brand-mark {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  place-items: center;
-  color: var(--paper);
-  background: var(--ink);
-  border-radius: 50%;
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-  font-style: italic;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
 }
 
 .nav-links {
@@ -276,12 +287,12 @@ p {
 
 .button-primary {
   color: var(--paper);
-  background: var(--brass);
+  background: var(--accent-blue);
 }
 
 .button-primary:hover,
 .button-primary:focus-visible {
-  background: var(--brass-deep);
+  background: var(--accent-blue-deep);
 }
 
 .button-secondary {
@@ -928,7 +939,7 @@ p {
 .check-row input {
   width: 16px;
   height: 16px;
-  accent-color: var(--brass);
+  accent-color: var(--accent-blue);
 }
 
 .full-width {
@@ -1158,9 +1169,9 @@ p {
 /* Footer */
 
 .site-footer {
-  width: min(1280px, calc(100% - 32px));
+  width: min(1320px, calc(100% - 32px));
   margin: 0 auto 56px;
-  padding: 56px;
+  padding: 64px;
   color: var(--paper);
   background: var(--ink);
   border-radius: 24px;
@@ -1227,13 +1238,8 @@ p {
   color: rgba(245, 243, 238, 0.6);
 }
 
-.site-footer .brand-mark {
-  background: var(--paper);
-  color: var(--ink);
-}
-
 .footer-legal {
-  width: min(1280px, calc(100% - 32px));
+  width: min(1320px, calc(100% - 32px));
   margin: -28px auto 40px;
   color: var(--faint);
   font-size: 0.85rem;
