@@ -26,11 +26,17 @@ if (siteHeader) {
   updateHeaderState();
 }
 
+function formatList(items) {
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+}
+
 const firstWorkflows = {
-  HVAC: "missed-call recovery plus Starter booking",
-  plumbing: "urgent leak triage plus Starter booking",
-  roofing: "inspection booking plus storm-lead qualification",
-  electrical: "service-call qualification plus approved callback routing",
+  HVAC: "catching missed calls and booking the simple ones",
+  plumbing: "flagging urgent leaks fast and booking the rest",
+  roofing: "booking inspections and sorting storm calls",
+  electrical: "checking the job details and calling back the right way",
 };
 
 filterButtons.forEach((button) => {
@@ -58,14 +64,14 @@ auditForm?.addEventListener("submit", (event) => {
   );
 
   const workflow = firstWorkflows[trade] ?? firstWorkflows.HVAC;
-  const toolStack = selectedTools.length ? selectedTools.join(" plus ") : "phone plus email handoff";
-  const conservativeScenario = profit;
-  const strongerScenario = profit * 3;
+  const toolStack = selectedTools.length ? formatList(selectedTools) : "your phone and email";
+  const oneJobValue = profit;
+  const threeJobValue = profit * 3;
   const likelyPlan = leads >= 75 ? "Growth ($299/mo)" : "Starter ($119/mo)";
 
   auditResult.innerHTML = `
-    <span class="result-label">Recommended first workflow for ${trade}</span>
-    <strong>${workflow}</strong>
-    <p>Start self-serve with ${toolStack}. Scenario: one recovered job can represent about $${conservativeScenario.toLocaleString()} in gross profit; three recovered jobs can represent about $${strongerScenario.toLocaleString()}. Suggested first plan: ${likelyPlan} with booking, emergency triage, and human handoff rules.</p>
+    <span class="result-label">What MyWorkFlo would do for your ${trade} business</span>
+    <strong>Start by ${workflow}</strong>
+    <p>It would connect to ${toolStack}. One job you would've otherwise missed is worth about $${oneJobValue.toLocaleString()} — recover three in a month and that's about $${threeJobValue.toLocaleString()}. Best plan to start with: ${likelyPlan}, which includes booking, emergency detection, and handing off to a person when needed.</p>
   `;
 });
