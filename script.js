@@ -2,6 +2,29 @@ const filterButtons = document.querySelectorAll(".filter-button");
 const workflowCards = document.querySelectorAll(".agent-card");
 const auditForm = document.querySelector("#auditForm");
 const auditResult = document.querySelector("#auditResult");
+const siteHeader = document.querySelector(".site-header");
+
+let headerTicking = false;
+
+function updateHeaderState() {
+  siteHeader.classList.toggle("is-scrolled", window.scrollY > 24);
+  headerTicking = false;
+}
+
+if (siteHeader) {
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (!headerTicking) {
+        requestAnimationFrame(updateHeaderState);
+        headerTicking = true;
+      }
+    },
+    { passive: true },
+  );
+
+  updateHeaderState();
+}
 
 const firstWorkflows = {
   HVAC: "missed-call recovery plus Starter booking",
