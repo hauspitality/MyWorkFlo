@@ -12,7 +12,7 @@ export interface ConversationContext {
   business: Pick<Business, "id" | "name" | "timezone" | "control_mode">;
   serviceSettings: Pick<
     ServiceSettings,
-    "business_hours" | "service_area" | "languages" | "ai_persona_name" | "weather_thresholds"
+    "business_hours" | "service_area" | "languages" | "ai_persona_name" | "weather_thresholds" | "emergency_keywords"
   >;
   appointmentTypes: Array<Pick<AppointmentType, "id" | "name" | "duration_minutes" | "hvac_issue_codes" | "auto_bookable">>;
   conversation: Pick<
@@ -44,7 +44,7 @@ export async function buildConversationContext(conversationId: string): Promise<
         .single(),
       supabase
         .from("service_settings")
-        .select("business_hours, service_area, languages, ai_persona_name, weather_thresholds")
+        .select("business_hours, service_area, languages, ai_persona_name, weather_thresholds, emergency_keywords")
         .eq("business_id", conversation.business_id)
         .single(),
       supabase

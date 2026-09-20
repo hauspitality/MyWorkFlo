@@ -46,4 +46,18 @@ describe("detectEmergencySignal", () => {
     // A bilingual household mixing languages mid-message should still trip.
     expect(detectEmergencySignal("hola, I think huele a gas in the kitchen")?.category).toBe("GAS_SMELL");
   });
+
+  it("matches a business's own custom trigger words as CUSTOM_TRIGGER", () => {
+    const match = detectEmergencySignal("the compressor is making a popping sound", ["popping sound"]);
+    expect(match?.category).toBe("CUSTOM_TRIGGER");
+  });
+
+  it("ignores empty/blank custom keywords rather than matching everything", () => {
+    expect(detectEmergencySignal("our ac stopped working today", ["", "   "])).toBeNull();
+  });
+
+  it("still checks platform categories first even when custom keywords are present", () => {
+    const match = detectEmergencySignal("I smell gas near my furnace", ["popping sound"]);
+    expect(match?.category).toBe("GAS_SMELL");
+  });
 });

@@ -32,6 +32,12 @@ const SCRIPTS: Record<EmergencyCategory, (businessName: string) => string> = {
 
   BURNING_SMELL_ELECTRICAL: (businessName) =>
     `A burning smell near electrical or HVAC equipment is a safety emergency. Please move away from the area. If you see smoke or flames, leave the house and call 911. We've alerted ${businessName}'s team right now. This has been marked urgent.`,
+
+  // Matched one of this business's own custom trigger words (see
+  // service_settings.emergency_keywords) — the hazard type isn't known, so
+  // this stays deliberately generic rather than guessing.
+  CUSTOM_TRIGGER: (businessName) =>
+    `This sounds urgent, so we're treating it as a safety priority. If you're in any danger, please get to safety and call 911. We've alerted ${businessName}'s team right now so a person can follow up immediately.`,
 };
 
 export function getEmergencyScript(category: EmergencyCategory, businessName: string): string {

@@ -49,7 +49,7 @@ export async function runTurn(context: ConversationContext, inboundText: string)
   // Layer 1: deterministic, no LLM call, runs regardless of detected
   // language. This is the real safety backstop — Layer 2 (flag_emergency
   // below) exists for phrasing this list can't anticipate, not instead of it.
-  const layer1Match = detectEmergencySignal(inboundText);
+  const layer1Match = detectEmergencySignal(inboundText, context.serviceSettings.emergency_keywords);
   if (layer1Match) {
     return {
       decision: buildEmergencyDecision(layer1Match.category, context.business.name, fallbackLanguage),

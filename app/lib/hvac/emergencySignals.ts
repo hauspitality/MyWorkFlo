@@ -19,7 +19,8 @@ export type EmergencyCategory =
   | "CARBON_MONOXIDE_CONCERN"
   | "SPARKING_ELECTRICAL"
   | "FLOODING_NEAR_ELECTRICAL"
-  | "BURNING_SMELL_ELECTRICAL";
+  | "BURNING_SMELL_ELECTRICAL"
+  | "CUSTOM_TRIGGER";
 
 export interface EmergencyMatch {
   category: EmergencyCategory;
@@ -126,8 +127,15 @@ function includesPhrase(normalized: string, phrases: string[]): string | null {
  * Checks every category rather than short-circuiting on the first hit type,
  * but returns as soon as any match is found — the caller doesn't need to
  * qualify further once one true emergency signal is present.
+ *
+ * `customKeywords` is this business's own per-tenant supplement (seeded
+ * empty, editable in onboarding/settings — see service_settings.
+ * emergency_keywords) — checked last, after the platform's own fixed
+ * categories, since those are more specific when they also match. A hit
+ * here has no known hazard type, so it maps to the generic CUSTOM_TRIGGER
+ * script rather than guessing a specific one.
  */
-export function detectEmergencySignal(rawText: string): EmergencyMatch | null {
+export function detectEmergencySignal(rawText: string, customKeywords: string[] = []): EmergencyMatch | null {
   const text = normalize(rawText);
 
   const gasMatch = includesPhrase(text, GAS_SMELL_PHRASES);
@@ -150,6 +158,12 @@ export function detectEmergencySignal(rawText: string): EmergencyMatch | null {
 
   const burnMatch = includesPhrase(text, BURNING_ELECTRICAL_PHRASES);
   if (burnMatch) return { category: "BURNING_SMELL_ELECTRICAL", matchedPhrase: burnMatch };
+
+  const customMatch = includesPhrase(
+    text,
+    customKeywords.filter((k) => k.trim().length > 0),
+  );
+  if (customMatch) return { category: "CUSTOM_TRIGGER", matchedPhrase: customMatch };
 
   return null;
 }
