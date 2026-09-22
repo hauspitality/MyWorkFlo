@@ -26,6 +26,14 @@ Works alongside the tools you already use — business phone, text messages, Goo
 2. **It catches what you miss** — your calls still ring you first; the moment one is missed, it texts the customer back, watches for urgent language, and loops in a person when it matters.
 3. **It books or hands off** — books the appointment and sends a confirmation, or flags it for your office if a person needs to decide.
 
+## How it compares
+
+- **A human answering service** — answers politely, takes a message, and leaves the booking to you. Per-minute plans commonly run $250 to $1,725 a month, and the job still isn't on the calendar.
+- **Text-back-only tools** — send "sorry we missed you" and stop there. The customer still has nothing scheduled, so they keep calling down the list.
+- **MyWorkFlo** — texts back in seconds, qualifies the job, and books it on your real calendar. Flat pricing from $119/mo, with a human pulled in the moment it matters.
+
+Full comparisons: [vs answering services](https://myworkflo.com/compare/myworkflo-vs-answering-services) · [all alternatives](https://myworkflo.com/alternatives)
+
 ## How much does it do on its own? You decide.
 
 - **Draft** — it prepares, you approve. Staff approves every message before it's sent, except real safety emergencies, which send a locked, pre-approved safety script instantly.
@@ -68,4 +76,4 @@ Home service calls can be urgent. MyWorkFlo knows its limits: it won't guess at 
 
 ---
 
-[Start free setup](https://app.myworkflo.com/login) · [Sign in to the app](https://app.myworkflo.com/login) · [HTML version](https://myworkflo.com/) · [MyWorkFlo alternatives compared](https://myworkflo.com/alternatives)
+[Start free setup](https://app.myworkflo.com/login) · [Live demo — get the sample text on your phone](https://app.myworkflo.com/demo) · [Sign in to the app](https://app.myworkflo.com/login) · [HTML version](https://myworkflo.com/) · [MyWorkFlo alternatives compared](https://myworkflo.com/alternatives)

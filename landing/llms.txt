@@ -33,4 +33,5 @@
 - [AI vs a human answering service for HVAC](https://myworkflo.com/compare/myworkflo-vs-answering-services)
 - [Guide: how to automatically answer missed HVAC calls and book the job](https://myworkflo.com/guides/how-to-answer-missed-hvac-calls)
 - [Guide: best AI call answering and booking software for small HVAC shops](https://myworkflo.com/guides/best-ai-call-answering-hvac)
+- [Live demo — get the sample missed-call text on your phone, no signup](https://app.myworkflo.com/demo)
 - [Start free setup / app sign-in](https://app.myworkflo.com/login)
