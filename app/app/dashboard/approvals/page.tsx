@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ApprovalCard } from "./approval-card";
 
 const TYPE_LABEL: Record<string, string> = {
   outbound_message: "Message needs approval",
@@ -28,7 +29,7 @@ export default async function ApprovalsPage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 lg:px-8">
       <h1 className="text-2xl font-semibold text-ink lg:text-3xl">Approvals</h1>
-      <p className="mt-1 text-sm text-muted">Oldest first. Approving/declining from here is coming soon.</p>
+      <p className="mt-1 text-sm text-muted">Oldest first.</p>
 
       {!approvals?.length ? (
         <div className="mt-8 rounded-lg border border-line bg-card p-8 text-center">
@@ -41,15 +42,14 @@ export default async function ApprovalsPage() {
             const summary =
               (payload.draft_text as string) ?? (payload.reason as string) ?? (payload.holding_text as string) ?? "See conversation for details.";
             return (
-              <div key={a.id} className="rounded-lg border border-line bg-card p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="rounded-full bg-brass-soft px-2.5 py-1 text-xs font-medium text-brass-deep">
-                    {TYPE_LABEL[a.type] ?? a.type}
-                  </span>
-                  <span className="text-xs text-muted">{new Date(a.requested_at).toLocaleString()}</span>
-                </div>
-                <p className="mt-3 text-sm text-ink-soft">{summary}</p>
-              </div>
+              <ApprovalCard
+                key={a.id}
+                id={a.id}
+                typeLabel={TYPE_LABEL[a.type] ?? a.type}
+                summary={summary}
+                requestedAt={a.requested_at}
+                expiresAt={a.expires_at}
+              />
             );
           })}
         </div>

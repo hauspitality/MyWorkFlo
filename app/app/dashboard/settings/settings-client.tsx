@@ -143,19 +143,51 @@ export function SettingsClient({
           </Section>
 
           <Section title="Calendar connection">
-            <p className="text-sm text-ink-soft">
-              {calendarConnected
-                ? "Google Calendar is connected."
-                : "Not connected yet — Autopilot bookings fall back to staff approval until this is set up. Coming soon."}
-            </p>
+            {calendarConnected ? (
+              <div className="flex items-center gap-2 text-sm text-ink-soft">
+                <span className="h-2 w-2 rounded-full bg-gauge-green" />
+                Google Calendar is connected. Availability and bookings use your real calendar.
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm text-ink-soft">
+                  Not connected — the AI offers simulated availability, and Autopilot bookings fall back to
+                  staff approval until this is set up.
+                </p>
+                <a
+                  href="/api/calendar/google/connect"
+                  className="mt-3 inline-block rounded-md bg-accent-blue px-4 py-2 text-sm font-medium text-white hover:bg-accent-blue-deep"
+                >
+                  Connect Google Calendar
+                </a>
+              </div>
+            )}
           </Section>
 
           <Section title="Billing & plan">
-            <p className="text-sm text-ink-soft">
-              {subscriptionStatus
-                ? `Subscription status: ${subscriptionStatus}.`
-                : "Self-serve billing isn't live yet — this is being set up manually for now."}
-            </p>
+            {subscriptionStatus ? (
+              <p className="text-sm text-ink-soft">Subscription status: {subscriptionStatus}.</p>
+            ) : (
+              <div>
+                <p className="text-sm text-ink-soft">No active subscription. Pick a plan to get started:</p>
+                <div className="mt-3 space-y-2">
+                  {[
+                    { plan: "starter", label: "Starter", price: "$119/mo" },
+                    { plan: "growth", label: "Growth", price: "$299/mo" },
+                    { plan: "pro", label: "Pro", price: "$599/mo" },
+                  ].map((p) => (
+                    <a
+                      key={p.plan}
+                      href={`/api/billing/checkout?plan=${p.plan}`}
+                      className="flex items-center justify-between rounded-md border border-line bg-paper px-3 py-2 text-sm hover:border-accent-blue"
+                    >
+                      <span className="font-medium text-ink">{p.label}</span>
+                      <span className="text-muted">{p.price}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </Section>
 
           <Section title="Account">

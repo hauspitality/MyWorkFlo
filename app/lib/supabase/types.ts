@@ -199,12 +199,17 @@ export interface AiDecisionMetadata {
   language: string;
   emergency_flag: boolean;
   emergency_category?: string;
-  intent: string;
+  /** Set on engine-generated decisions (emergency/fallback); respond_to_customer turns don't produce one. */
+  intent?: string;
+  /** HVAC taxonomy code the model matched this conversation to, if any. */
+  matched_issue_code?: string | null;
+  /** Qualifying fields collected so far (symptom_onset, service_address, ...). */
+  collected_fields?: Record<string, string>;
   booking_ready: boolean;
-  proposed_appointment_type_id?: string;
-  proposed_start?: string;
+  proposed_appointment_type_id?: string | null;
+  proposed_start?: string | null;
   needs_human: boolean;
-  needs_human_reason?: string;
+  needs_human_reason?: string | null;
   tool_calls?: Array<{ name: string; input: unknown; result: unknown }>;
 }
 

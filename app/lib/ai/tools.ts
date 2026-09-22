@@ -1,6 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/service";
+import { getBusySlots } from "@/lib/calendar/google";
 import { isWeatherElevated } from "@/lib/weather";
-import type { AppointmentType, PricingGuidance, ServiceSettings } from "@/lib/supabase/types";
+import type { AppointmentType, BusinessHours, PricingGuidance, ServiceSettings } from "@/lib/supabase/types";
 import type { ToolSpec } from "./providers/types";
 
 /**
@@ -223,12 +224,14 @@ export interface AvailabilitySlot {
 }
 
 /**
- * Real Google Calendar integration lands in lib/calendar/google.ts
- * (Phase 3/4 per the build plan). Until a business has an active
- * connection, this returns deterministic simulated slots so the
- * conversation engine and dev simulator are fully testable today —
- * the function signature and result shape won't change when the real
- * integration replaces the fallback branch below.
+ * With an active Google Calendar connection: real slots — business-hours
+ * candidates minus freebusy periods — or [] when the lookup fails, so the
+ * model says it couldn't find times rather than inventing some (autopilot
+ * can book whatever this returns; a connected business must never be
+ * offered fabricated times). Only without a connection: deterministic
+ * simulated slots so the conversation engine and dev simulator stay fully
+ * testable. Same shape either way; `source` says which path produced a
+ * slot.
  */
 export async function checkAvailability(
   ctx: ToolContext,
@@ -252,11 +255,166 @@ export async function checkAvailability(
     .maybeSingle();
 
   if (connection) {
-    // TODO(Phase 3/4): replace with a real freebusy.query against Google
-    // Calendar via lib/calendar/google.ts. Same return shape.
+    const real = await buildGoogleCalendarSlots(ctx.businessId, durationMinutes);
+    return real ?? [];
   }
 
   return buildSimulatedSlots(durationMinutes);
+}
+
+const LOOKAHEAD_DAYS = 5;
+const MAX_SLOTS = 5;
+const MIN_NOTICE_HOURS = 2;
+
+/**
+ * Candidate slots on the hour within business hours over the next
+ * LOOKAHEAD_DAYS, minus the business's Google Calendar busy periods.
+ * Returns null when the busy lookup fails (caller reports no
+ * availability); returns [] when the calendar is genuinely fully booked.
+ *
+ * Timezone: business_hours are wall-clock times in businesses.timezone.
+ * Candidates are built by converting business-local wall times to UTC via
+ * Intl offset computation (zonedWallTimeToUtc below) rather than trusting
+ * the server's own timezone. Known limitation: for a slot starting inside
+ * the repeated/skipped hour of a DST transition the offset is ambiguous
+ * and we take the post-adjustment interpretation — off by one hour twice
+ * a year in the worst case, never on ordinary days.
+ */
+async function buildGoogleCalendarSlots(businessId: string, durationMinutes: number): Promise<AvailabilitySlot[] | null> {
+  const supabase = createServiceClient();
+  const [{ data: settings }, { data: business }] = await Promise.all([
+    supabase
+      .from("service_settings")
+      .select("business_hours, min_notice_hours")
+      .eq("business_id", businessId)
+      .maybeSingle<Pick<ServiceSettings, "business_hours" | "min_notice_hours">>(),
+    supabase.from("businesses").select("timezone").eq("id", businessId).maybeSingle<{ timezone: string }>(),
+  ]);
+
+  if (!settings?.business_hours || !business?.timezone) return null;
+
+  const noticeHours = Math.max(MIN_NOTICE_HOURS, settings.min_notice_hours ?? 0);
+
+  let candidates: Array<{ start: Date; end: Date }>;
+  try {
+    candidates = buildCandidateSlots(settings.business_hours, business.timezone, durationMinutes, noticeHours);
+  } catch {
+    // Bad timezone string or malformed hours — can't compute honestly.
+    return null;
+  }
+  if (candidates.length === 0) return [];
+
+  const busy = await getBusySlots({
+    businessId,
+    timeMinIso: candidates[0].start.toISOString(),
+    timeMaxIso: candidates[candidates.length - 1].end.toISOString(),
+  });
+  if (busy === null) return null;
+
+  const busyRanges = busy.map((b) => ({ start: new Date(b.start).getTime(), end: new Date(b.end).getTime() }));
+
+  return candidates
+    .filter((slot) => {
+      const start = slot.start.getTime();
+      const end = slot.end.getTime();
+      return !busyRanges.some((b) => start < b.end && end > b.start);
+    })
+    .slice(0, MAX_SLOTS)
+    .map((slot) => ({
+      start: slot.start.toISOString(),
+      end: slot.end.toISOString(),
+      source: "google_calendar" as const,
+    }));
+}
+
+function buildCandidateSlots(
+  hours: BusinessHours,
+  timeZone: string,
+  durationMinutes: number,
+  noticeHours: number,
+): Array<{ start: Date; end: Date }> {
+  const now = new Date();
+  const earliest = new Date(now.getTime() + noticeHours * 3_600_000);
+  const candidates: Array<{ start: Date; end: Date }> = [];
+  // Business-local calendar date of "now", stepped forward arithmetically.
+  // Stepping 24h of real time instead would skip an entire business day
+  // across a 23-hour spring-forward local day.
+  const today = wallTimeInZone(now, timeZone);
+
+  for (let dayOffset = 0; dayOffset <= LOOKAHEAD_DAYS; dayOffset++) {
+    // Date.UTC normalizes day overflow (e.g. Jan 32 -> Feb 1), so this is
+    // pure calendar arithmetic on the local date — read the resulting
+    // year/month/day/weekday back out in UTC.
+    const derived = new Date(Date.UTC(today.year, today.month - 1, today.day + dayOffset));
+    const local = { year: derived.getUTCFullYear(), month: derived.getUTCMonth() + 1, day: derived.getUTCDate() };
+    const dayKey = WEEKDAY_KEYS[derived.getUTCDay()];
+
+    const window = hours[dayKey];
+    if (!window) continue; // closed that day
+
+    const [openHour, openMinute] = parseHhMm(window.open);
+    const [closeHour, closeMinute] = parseHhMm(window.close);
+    const closeMinutes = closeHour * 60 + closeMinute;
+
+    // Slots start on the hour: first whole hour at/after opening.
+    const firstHour = openMinute > 0 ? openHour + 1 : openHour;
+
+    for (let hour = firstHour; hour * 60 + durationMinutes <= closeMinutes; hour++) {
+      const start = zonedWallTimeToUtc(local.year, local.month, local.day, hour, timeZone);
+      if (start < earliest) continue;
+      candidates.push({ start, end: new Date(start.getTime() + durationMinutes * 60_000) });
+    }
+  }
+
+  return candidates;
+}
+
+function parseHhMm(value: string): [number, number] {
+  const [h, m] = value.split(":").map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) throw new Error(`Bad business-hours time: ${value}`);
+  return [h, m];
+}
+
+// Indexed by Date#getUTCDay(), matching the BusinessHours keys.
+const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+
+function wallTimeInZone(date: Date, timeZone: string): { year: number; month: number; day: number } {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? NaN);
+  return { year: get("year"), month: get("month"), day: get("day") };
+}
+
+/** UTC instant whose wall clock in `timeZone` reads year-month-day hour:00. */
+function zonedWallTimeToUtc(year: number, month: number, day: number, hour: number, timeZone: string): Date {
+  // Start from the naive-UTC guess, then correct by however far the target
+  // zone's wall clock is from the desired one. Two passes so a correction
+  // that crosses a DST boundary re-converges.
+  let utc = new Date(Date.UTC(year, month - 1, day, hour, 0, 0, 0));
+  const desired = Date.UTC(year, month - 1, day, hour, 0, 0, 0);
+  for (let i = 0; i < 2; i++) {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(utc);
+    const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? NaN);
+    const wall = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), 0, 0);
+    if (wall === desired) break;
+    utc = new Date(utc.getTime() + (desired - wall));
+  }
+  return utc;
 }
 
 function buildSimulatedSlots(durationMinutes: number): AvailabilitySlot[] {

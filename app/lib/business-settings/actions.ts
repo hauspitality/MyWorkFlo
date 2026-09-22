@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { normalizePhoneE164 } from "@/lib/twilio/client";
 import type { BusinessHours, ControlMode, ServiceArea } from "@/lib/supabase/types";
 
 /**
@@ -65,6 +66,12 @@ export async function createBusinessAndSeed(input: {
     .maybeSingle();
   if (existing) return { businessId: existing.business_id };
 
+  // Stored E.164 so the SMS webhook's staff-detection (which compares
+  // against Twilio's E.164 From) can match this number. Validate before
+  // creating anything so a bad phone never leaves a half-seeded business.
+  const ownerPhone = normalizePhoneE164(input.ownerPhone);
+  if (!ownerPhone) throw new Error("Enter a valid US phone number");
+
   const { data: business, error: businessError } = await supabase
     .from("businesses")
     .insert({
@@ -83,7 +90,7 @@ export async function createBusinessAndSeed(input: {
     business_id: businessId,
     user_id: user.id,
     name: input.ownerName,
-    phone_number: input.ownerPhone,
+    phone_number: ownerPhone,
     role: "owner",
     is_active: true,
     joined_at: new Date().toISOString(),

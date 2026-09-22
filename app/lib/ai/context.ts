@@ -22,7 +22,10 @@ export interface ConversationContext {
   history: Array<Pick<Message, "sender" | "body" | "created_at">>;
 }
 
-export async function buildConversationContext(conversationId: string): Promise<ConversationContext> {
+export async function buildConversationContext(
+  conversationId: string,
+  opts: { excludeMessageId?: string } = {},
+): Promise<ConversationContext> {
   const supabase = createServiceClient();
 
   const { data: conversation, error: conversationError } = await supabase
@@ -52,11 +55,21 @@ export async function buildConversationContext(conversationId: string): Promise<
         .select("id, name, duration_minutes, hvac_issue_codes, auto_bookable")
         .eq("business_id", conversation.business_id)
         .eq("is_active", true),
-      supabase
-        .from("messages")
-        .select("sender, body, created_at")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true }),
+      // The current turn's inbound message may already be persisted (the
+      // pipeline inserts it up front for webhook idempotency) — exclude it
+      // so runTurn doesn't see the same text in history AND as the new turn.
+      (opts.excludeMessageId
+        ? supabase
+            .from("messages")
+            .select("sender, body, created_at")
+            .eq("conversation_id", conversationId)
+            .neq("id", opts.excludeMessageId)
+            .order("created_at", { ascending: true })
+        : supabase
+            .from("messages")
+            .select("sender, body, created_at")
+            .eq("conversation_id", conversationId)
+            .order("created_at", { ascending: true })),
     ]);
 
   if (!business) throw new Error(`Business not found for conversation ${conversationId}`);
