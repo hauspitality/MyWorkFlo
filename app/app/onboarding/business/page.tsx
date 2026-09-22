@@ -13,7 +13,7 @@ export default async function OnboardingBusinessPage() {
   // A business already exists → this step is done; continue the wizard
   // instead of re-showing an empty create form.
   const { data: staff } = await supabase.from("staff").select("business_id").eq("user_id", user.id).limit(1).maybeSingle();
-  if (staff) redirect("/onboarding/hours");
+  if (staff) redirect("/onboarding/test");
 
   return (
     <OnboardingShell step={0} title="Tell us about your business" subtitle="Takes about 2 minutes.">

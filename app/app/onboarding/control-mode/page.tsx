@@ -14,7 +14,7 @@ export default async function OnboardingControlModePage() {
 
   return (
     <OnboardingShell
-      step={5}
+      step={7}
       title="How hands-on do you want to be?"
       subtitle="You can change this anytime from Settings."
     >

@@ -73,7 +73,8 @@ export type ExecutedPlan =
   | ActionPlan
   | { type: "emergency_acknowledgment"; text: string }
   | { type: "duplicate_inbound" }
-  | { type: "debounced_deferred" };
+  | { type: "debounced_deferred" }
+  | { type: "messaging_paused" };
 
 export interface ProcessInboundResult {
   conversationId: string;
@@ -105,7 +106,7 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
 
   const { data: business } = await db
     .from("businesses")
-    .select("name, control_mode, twilio_phone_number")
+    .select("name, control_mode, twilio_phone_number, subscription_status")
     .eq("id", businessId)
     .single();
   if (!business) throw new Error(`Business not found: ${businessId}`);
@@ -230,6 +231,43 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
   }
 
   const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+
+  // Messaging is paused when the subscription is canceled (null = pre-billing
+  // /dev, and past_due keeps running through Stripe's retry + grace window).
+  // The inbound row above is already persisted — idempotency intact, record
+  // kept — but no AI turn runs and nothing is transmitted. Simulated traffic
+  // (test drives) is never paused. Layer-1 emergency detection still runs
+  // first: we can't text the customer (lapsed subscription = no outbound),
+  // but staff MUST still be told, truthfully, so they can call.
+  if (business.subscription_status === "canceled" && !simulation) {
+    const isEmergency = detectEmergencySignal(body, serviceSettings?.emergency_keywords ?? []);
+    if (isEmergency) {
+      await notifyBusinessStaff({
+        businessId,
+        businessTwilioNumber: business.twilio_phone_number,
+        smsText: `EMERGENCY text received but messaging is paused (subscription ended) — CALL them now: ${fromPhone}`,
+        push: {
+          title: "EMERGENCY — messaging paused",
+          body: `${fromPhone} texted an emergency but your subscription ended. Call them now.`,
+          url: `${appBaseUrl}/dashboard/leads/${conversation.id}`,
+        },
+      });
+      await insertAudit("emergency_while_paused", "conversation", conversation.id, { from: fromPhone });
+    }
+    await db
+      .from("conversations")
+      .update({ last_message_at: new Date().toISOString() })
+      .eq("id", conversation.id);
+    await insertAudit("messaging_paused_inbound_dropped", "conversation", conversation.id, { from: fromPhone });
+    return {
+      conversationId: conversation.id,
+      controlMode: conversation.control_mode_snapshot,
+      decision: null,
+      plan: { type: "messaging_paused" },
+      shortCircuited: true,
+      toolCallsThisTurn: [],
+    };
+  }
 
   // A conversation already escalated as an emergency gets the fixed
   // acknowledgment, never another model turn — a human is already on it,

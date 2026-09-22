@@ -13,7 +13,7 @@ export default async function OnboardingEmergencyKeywordsPage() {
 
   return (
     <OnboardingShell
-      step={4}
+      step={6}
       title="Safety triggers"
       subtitle="These always send an instant, pre-written safety reply — no waiting on approval, ever."
     >

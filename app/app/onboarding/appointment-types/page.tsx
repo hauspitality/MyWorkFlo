@@ -27,7 +27,7 @@ export default async function OnboardingAppointmentTypesPage() {
 
   return (
     <OnboardingShell
-      step={3}
+      step={5}
       title="What can customers book?"
       subtitle="We've pre-filled common HVAC visits — edit or add your own."
     >

@@ -4,6 +4,11 @@ import { Suspense, useEffect, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/browser";
 
+// Inlined at build time. Google OAuth is only offered when explicitly enabled;
+// otherwise the email magic link is the one (working) primary path — never a
+// dead primary button.
+const GOOGLE_LOGIN_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED === "true";
+
 export default function LoginPage() {
   return (
     <Suspense>
@@ -124,11 +129,13 @@ function LoginForm() {
             <div>
               <h1 className="mb-1 text-xl font-semibold">Sign in or create your account</h1>
               <p className="text-sm text-muted">
-                One tap with Google — no password to remember. New here? Same button; setup takes
-                about 10 minutes.
+                {GOOGLE_LOGIN_ENABLED
+                  ? "One tap with Google — no password to remember. New here? Same button; setup takes about 10 minutes."
+                  : "We'll email you a sign-in link — no password to remember. New here? Same link; setup takes about 10 minutes."}
               </p>
             </div>
 
+            {GOOGLE_LOGIN_ENABLED && (
             <button
               onClick={handleGoogleSignIn}
               className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-line bg-card font-semibold text-ink transition-colors hover:border-line-strong hover:bg-paper"
@@ -153,17 +160,21 @@ function LoginForm() {
               </svg>
               Continue with Google
             </button>
+            )}
 
             {status === "error" && (
               <p className="text-sm text-gauge-red">Something went wrong. Try again in a moment.</p>
             )}
 
-            {!showEmailFallback ? (
+            {GOOGLE_LOGIN_ENABLED && !showEmailFallback ? (
               <button onClick={() => setShowEmailFallback(true)} className="block w-full text-center text-sm text-muted hover:text-ink">
                 Or get a sign-in link by email
               </button>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-3 border-t border-line pt-4">
+              <form
+                onSubmit={handleSubmit}
+                className={GOOGLE_LOGIN_ENABLED ? "space-y-3 border-t border-line pt-4" : "space-y-3"}
+              >
                 <label className="block">
                   <span className="mb-1.5 block text-sm font-medium text-ink-soft">Email</span>
                   <input

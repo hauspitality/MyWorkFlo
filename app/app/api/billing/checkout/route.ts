@@ -9,7 +9,11 @@ import { getStripe, isStripeConfigured, priceIdForPlan } from "@/lib/stripe/clie
  * Only the business owner (staff.role = 'owner') may start billing.
  */
 export async function GET(request: Request) {
-  const plan = new URL(request.url).searchParams.get("plan");
+  const url = new URL(request.url);
+  const plan = url.searchParams.get("plan");
+  // The plan step of onboarding gates on checkout — send those users back
+  // into the wizard instead of stranding them in Settings.
+  const fromOnboarding = url.searchParams.get("from") === "onboarding";
   if (plan !== "starter" && plan !== "growth" && plan !== "pro") {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
   }
@@ -70,8 +74,8 @@ export async function GET(request: Request) {
     mode: "subscription",
     customer: customerId,
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${appUrl}/dashboard/settings?billing=success`,
-    cancel_url: `${appUrl}/dashboard/settings?billing=canceled`,
+    success_url: fromOnboarding ? `${appUrl}/onboarding/hours?billing=success` : `${appUrl}/dashboard/settings?billing=success`,
+    cancel_url: fromOnboarding ? `${appUrl}/onboarding/plan?billing=canceled` : `${appUrl}/dashboard/settings?billing=canceled`,
     metadata: { business_id: business.id },
     // Mirrored onto the subscription so the webhook can resolve the tenant
     // without a customer-id lookup.

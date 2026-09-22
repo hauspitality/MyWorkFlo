@@ -14,7 +14,7 @@ export default async function OnboardingServiceAreaPage() {
     .single();
 
   return (
-    <OnboardingShell step={2} title="Where do you work?" subtitle="Zip codes you'll take service calls in.">
+    <OnboardingShell step={4} title="Where do you work?" subtitle="Zip codes you'll take service calls in.">
       <ServiceAreaStep initial={(settings?.service_area as ServiceArea) ?? { type: "zip_list", zips: [] }} />
     </OnboardingShell>
   );

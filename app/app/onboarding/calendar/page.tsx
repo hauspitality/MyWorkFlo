@@ -19,7 +19,7 @@ export default async function OnboardingCalendarPage() {
 
   return (
     <OnboardingShell
-      step={6}
+      step={8}
       title="Connect your calendar"
       subtitle="Availability and bookings come straight from your Google Calendar."
     >
@@ -30,7 +30,7 @@ export default async function OnboardingCalendarPage() {
             Google Calendar is connected. The AI offers real openings and puts bookings on your calendar.
           </div>
           <Link
-            href="/onboarding/plan"
+            href="/onboarding/done"
             className="flex h-12 w-full items-center justify-center rounded-full bg-accent-blue font-semibold text-white transition-colors hover:bg-accent-blue-deep"
           >
             Continue
@@ -52,7 +52,7 @@ export default async function OnboardingCalendarPage() {
             </a>
           )}
           <p className="text-center">
-            <Link href="/onboarding/plan" className="text-sm font-medium text-muted transition-colors hover:text-ink">
+            <Link href="/onboarding/done" className="text-sm font-medium text-muted transition-colors hover:text-ink">
               {configured ? "I'll do this later" : "Skip for now"}
             </Link>
           </p>

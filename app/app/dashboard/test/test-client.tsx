@@ -116,7 +116,18 @@ function toolsList(toolCalls: string[]): string {
     .join(", ");
 }
 
-export function TestClient({ businesses }: { businesses: BusinessOption[] }) {
+export function TestClient({
+  businesses,
+  compact = false,
+}: {
+  businesses: BusinessOption[];
+  /**
+   * Embedded mode (e.g. the onboarding "Try it" step): drops the page-level
+   * controls card — mode toggle and business picker — and the top margin,
+   * keeping the scenario chips, conversation thread, and outcome strip.
+   */
+  compact?: boolean;
+}) {
   const [businessId, setBusinessId] = useState(businesses[0]?.id ?? "");
   const initialMode = businesses[0]?.control_mode;
   const [controlMode, setControlMode] = useState<Mode>(
@@ -171,8 +182,9 @@ export function TestClient({ businesses }: { businesses: BusinessOption[] }) {
   const activeModeHint = MODES.find((m) => m.value === controlMode)?.hint ?? "";
 
   return (
-    <div className="mt-5 space-y-4">
+    <div className={(compact ? "" : "mt-5 ") + "space-y-4"}>
       {/* Controls */}
+      {!compact && (
       <Card className="p-5 sm:px-6">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm font-medium text-ink-soft">Try it in:</span>
@@ -224,6 +236,7 @@ export function TestClient({ businesses }: { businesses: BusinessOption[] }) {
           </label>
         )}
       </Card>
+      )}
 
       {/* Conversation */}
       <Card>

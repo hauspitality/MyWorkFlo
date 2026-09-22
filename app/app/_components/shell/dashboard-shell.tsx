@@ -96,17 +96,45 @@ function SearchField() {
   );
 }
 
+function StatusBanner({ trialDaysLeft, messagingPaused }: { trialDaysLeft: number | null; messagingPaused: boolean }) {
+  if (messagingPaused) {
+    return (
+      <div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 bg-gauge-red-soft px-4 py-2 text-center text-[13px] text-gauge-red lg:px-8">
+        <span>Messaging is paused — your subscription ended. Customers calling you ring through like before MyWorkFlo; nothing texts back.</span>
+        <Link href="/dashboard/settings" className="font-semibold underline underline-offset-2 hover:no-underline">
+          Reactivate
+        </Link>
+      </div>
+    );
+  }
+  if (trialDaysLeft == null) return null;
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 bg-accent-blue-soft px-4 py-2 text-center text-[13px] text-accent-blue lg:px-8">
+      <span>
+        {trialDaysLeft} {trialDaysLeft === 1 ? "day" : "days"} left in your free trial
+      </span>
+      <Link href="/dashboard/settings" className="font-semibold underline underline-offset-2 hover:no-underline">
+        Manage billing
+      </Link>
+    </div>
+  );
+}
+
 export function DashboardShell({
   businessName,
   controlMode,
   userEmail,
   pendingApprovalsCount,
+  trialDaysLeft,
+  messagingPaused,
   children,
 }: {
   businessName: string;
   controlMode: ControlMode;
   userEmail: string;
   pendingApprovalsCount: number;
+  trialDaysLeft: number | null;
+  messagingPaused: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -192,6 +220,7 @@ export function DashboardShell({
             <InitialAvatar label={userEmail} className="h-9 w-9 text-sm" />
           </div>
         </header>
+        <StatusBanner trialDaysLeft={trialDaysLeft} messagingPaused={messagingPaused} />
         {children}
       </div>
 

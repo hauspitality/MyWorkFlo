@@ -29,7 +29,7 @@ export function BusinessForm() {
     setError(null);
     try {
       await createBusinessAndSeed({ name, timezone, ownerName, ownerPhone });
-      router.push("/onboarding/hours");
+      router.push("/onboarding/test");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setSaving(false);

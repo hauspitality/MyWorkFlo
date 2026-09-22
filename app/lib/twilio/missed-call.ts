@@ -27,6 +27,12 @@ export async function recordMissedCallAndTextBack(params: {
   const { businessId, businessName, businessPhone, callerPhone, callSid, status } = params;
   const db = createServiceClient();
 
+  const { data: business } = await db
+    .from("businesses")
+    .select("subscription_status")
+    .eq("id", businessId)
+    .maybeSingle();
+
   const { data: existingLead } = await db
     .from("leads")
     .select("id, language, status")
@@ -47,12 +53,22 @@ export async function recordMissedCallAndTextBack(params: {
     leadId = newLead.id;
   }
 
-  // Opt-out compliance: a lead who texted STOP must never get another text
-  // from us, including the missed-call opener. This runs BEFORE the
-  // text-back claim below so triggered_text_back is never stamped true for
-  // a text that was skipped — the call is still recorded, with an audit
-  // trail instead of a message.
-  if (existingLead?.status === "closed_lost") {
+  // Two reasons to record the call but never send the opener:
+  // - subscription_canceled: messaging is paused when the subscription is
+  //   canceled (null = pre-billing/dev; past_due keeps running through
+  //   Stripe's retry + grace window) — no outbound texts on a lapsed plan.
+  // - customer_opted_out: a lead who texted STOP must never get another
+  //   text from us, including the missed-call opener.
+  // Either way this runs BEFORE the text-back claim below so
+  // triggered_text_back is never stamped true for a text that was skipped —
+  // the call is still recorded, with an audit trail instead of a message.
+  const skipReason =
+    business?.subscription_status === "canceled"
+      ? "subscription_canceled"
+      : existingLead?.status === "closed_lost"
+        ? "customer_opted_out"
+        : null;
+  if (skipReason) {
     let skippedCallId: string | null = null;
     if (callSid) {
       await db.from("calls").upsert(
@@ -73,7 +89,7 @@ export async function recordMissedCallAndTextBack(params: {
       event_type: "missed_call_text_back_skipped",
       entity_type: "call",
       entity_id: skippedCallId,
-      metadata: { caller_phone: callerPhone, reason: "customer_opted_out" },
+      metadata: { caller_phone: callerPhone, reason: skipReason },
     });
     return;
   }

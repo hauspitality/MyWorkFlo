@@ -10,13 +10,13 @@ const PLANS = [
  * Shared between onboarding and Settings so the pricing moment always looks
  * the same. Plain <a> links — the checkout route 307s to Stripe.
  */
-export function PlanPicker() {
+export function PlanPicker({ fromOnboarding = false }: { fromOnboarding?: boolean } = {}) {
   return (
     <div className="space-y-2.5">
       {PLANS.map((p) => (
         <a
           key={p.plan}
-          href={`/api/billing/checkout?plan=${p.plan}`}
+          href={`/api/billing/checkout?plan=${p.plan}${fromOnboarding ? "&from=onboarding" : ""}`}
           className={
             "block rounded-xl border p-4 transition-colors " +
             (p.popular ? "border-accent-blue bg-accent-blue-soft/40 hover:bg-accent-blue-soft" : "border-line bg-card hover:border-line-strong")

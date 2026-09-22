@@ -3,24 +3,28 @@ import type { ReactNode } from "react";
 
 const STEPS = [
   { label: "Business", href: "/onboarding/business" },
+  { label: "Try it", href: "/onboarding/test" },
+  { label: "Plan", href: "/onboarding/plan" },
   { label: "Hours", href: "/onboarding/hours" },
   { label: "Service area", href: "/onboarding/service-area" },
   { label: "Appointment types", href: "/onboarding/appointment-types" },
   { label: "Emergency keywords", href: "/onboarding/emergency-keywords" },
   { label: "Control mode", href: "/onboarding/control-mode" },
   { label: "Calendar", href: "/onboarding/calendar" },
-  { label: "Plan", href: "/onboarding/plan" },
 ];
 
 export function OnboardingShell({
   step,
   title,
   subtitle,
+  wide = false,
   children,
 }: {
   step: number;
   title: string;
   subtitle?: string;
+  /** Widens the content column for steps that embed larger UI (e.g. the test conversation). */
+  wide?: boolean;
   children: ReactNode;
 }) {
   // The business step redirects forward once a business exists, so "Back"
@@ -29,7 +33,7 @@ export function OnboardingShell({
 
   return (
     <main className="flex min-h-full flex-1 items-start justify-center px-6 py-12">
-      <div className="w-full max-w-md">
+      <div className={"w-full " + (wide ? "max-w-2xl" : "max-w-md")}>
         <div className="mb-6 flex items-center gap-2.5">
           <svg viewBox="0 0 100 100" className="h-7 w-7" aria-hidden="true">
             <circle cx="50" cy="50" r="37" fill="none" stroke="#96692c" strokeWidth="7" />

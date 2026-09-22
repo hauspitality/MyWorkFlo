@@ -14,7 +14,7 @@ export default async function OnboardingHoursPage() {
     .single();
 
   return (
-    <OnboardingShell step={1} title="When are you open?" subtitle="This is when the AI can offer appointment slots.">
+    <OnboardingShell step={3} title="When are you open?" subtitle="This is when the AI can offer appointment slots.">
       <HoursStep initial={(settings?.business_hours as BusinessHours) ?? {}} />
     </OnboardingShell>
   );
