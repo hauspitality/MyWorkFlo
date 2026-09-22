@@ -10,8 +10,8 @@ export function ControlModeStep({ initial }: { initial: ControlMode }) {
 
   async function handleSave(mode: ControlMode) {
     await updateControlMode(mode);
-    router.push("/onboarding/done");
+    router.push("/onboarding/calendar");
   }
 
-  return <ControlModeSelector initial={initial} onSave={handleSave} submitLabel="Finish setup" />;
+  return <ControlModeSelector initial={initial} onSave={handleSave} submitLabel="Continue" />;
 }

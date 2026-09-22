@@ -134,6 +134,9 @@ export async function POST(request: Request) {
       // MessageSid makes a Twilio retry idempotent — the pipeline inserts
       // the inbound first and short-circuits on the unique violation.
       inboundSid: gate.params.MessageSid ?? null,
+      // Rapid multi-part texts collapse into one AI reply (Layer-1
+      // emergencies bypass the wait inside the pipeline).
+      debounceMs: 6000,
       deliver: (text) => sendSms({ to: from, from: to, body: text }),
     });
   } catch (err) {

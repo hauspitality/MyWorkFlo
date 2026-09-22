@@ -220,6 +220,7 @@ export async function resolveApproval(params: ResolveApprovalParams): Promise<Re
     }
 
     await db.from("conversations").update({ status: "booked" }).eq("id", conversationId).eq("business_id", businessId);
+    await db.from("leads").update({ status: "booked" }).eq("id", lead.id);
 
     const confirmationText = `You're booked: ${typeName} on ${formatInTimezone(start, business?.timezone)}. Reply here if you need to change anything.`;
     let sid: string | null = null;

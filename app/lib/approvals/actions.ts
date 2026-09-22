@@ -39,6 +39,7 @@ async function resolveAsStaff(approvalId: string, approve: boolean): Promise<Res
     responseChannel: null,
   });
   revalidatePath("/dashboard/approvals");
+  revalidatePath("/dashboard/leads", "layout");
   return result;
 }
 

@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { google } from "googleapis";
 import type { Auth } from "googleapis";
 import { createServiceClient } from "@/lib/supabase/service";
+import { decryptToken, encryptToken } from "@/lib/calendar/crypto";
 
 /**
  * Google Calendar integration (Phase 4): OAuth connect, freebusy-backed
@@ -13,10 +14,11 @@ import { createServiceClient } from "@/lib/supabase/service";
  * back to simulated slots / skip the calendar write. Nothing here throws
  * except exchangeCodeAndStore (the OAuth callback wants the failure).
  *
- * Tokens are stored as-is in calendar_connections. App-layer encryption
- * before insert is a flagged Phase-7 item — the migration comment on
- * calendar_connections expects it; do not ship multi-tenant production
- * without it.
+ * Tokens are AES-256-GCM encrypted at rest in calendar_connections via
+ * lib/calendar/crypto.ts (the flagged Phase-7 item). Legacy plaintext rows
+ * pass through decryptToken unchanged and get re-encrypted on the next
+ * token refresh; an unreadable ciphertext (key rotation) is treated like
+ * invalid_grant — the connection is marked revoked for re-connect.
  */
 
 const GOOGLE_SCOPE = "https://www.googleapis.com/auth/calendar"; // events + freebusy
@@ -141,9 +143,8 @@ export async function exchangeCodeAndStore(params: {
     business_id: params.businessId,
     provider: "google",
     calendar_id: "primary",
-    // Stored unencrypted — Phase-7 flagged item, see module comment.
-    access_token: tokens.access_token ?? null,
-    refresh_token: tokens.refresh_token ?? null,
+    access_token: tokens.access_token ? encryptToken(tokens.access_token) : null,
+    refresh_token: tokens.refresh_token ? encryptToken(tokens.refresh_token) : null,
     status: "active",
     connected_by: params.staffId,
   });
@@ -174,10 +175,23 @@ async function getAuthedClientForBusiness(businessId: string): Promise<AuthedCon
 
   if (!connection || (!connection.access_token && !connection.refresh_token)) return null;
 
+  // decryptToken passes legacy plaintext rows through unchanged; null means
+  // unreadable ciphertext (e.g. rotated key) — no usable connection, so take
+  // the same mark-revoked path as invalid_grant to prompt a re-connect.
+  const accessToken = connection.access_token ? decryptToken(connection.access_token) : null;
+  const refreshToken = connection.refresh_token ? decryptToken(connection.refresh_token) : null;
+  if (
+    (connection.access_token && accessToken === null) ||
+    (connection.refresh_token && refreshToken === null)
+  ) {
+    await markConnectionRevoked(connection.id).catch(() => {});
+    return null;
+  }
+
   const client = createOAuthClient();
   client.setCredentials({
-    access_token: connection.access_token,
-    refresh_token: connection.refresh_token,
+    access_token: accessToken,
+    refresh_token: refreshToken,
   });
 
   // googleapis refreshes the access token on demand from the refresh_token
@@ -188,8 +202,8 @@ async function getAuthedClientForBusiness(businessId: string): Promise<AuthedCon
     void db
       .from("calendar_connections")
       .update({
-        access_token: tokens.access_token,
-        ...(tokens.refresh_token ? { refresh_token: tokens.refresh_token } : {}),
+        access_token: encryptToken(tokens.access_token),
+        ...(tokens.refresh_token ? { refresh_token: encryptToken(tokens.refresh_token) } : {}),
       })
       .eq("id", connection.id)
       .then(undefined, () => {});

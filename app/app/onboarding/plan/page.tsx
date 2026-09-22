@@ -1,0 +1,79 @@
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { OnboardingShell } from "@/app/_components/settings/onboarding-shell";
+import { resolveOnboardingBusinessId } from "../_lib";
+
+const PLANS = [
+  { plan: "starter", label: "Starter", price: "$119/mo" },
+  { plan: "growth", label: "Growth", price: "$299/mo" },
+  { plan: "pro", label: "Pro", price: "$599/mo" },
+] as const;
+
+export default async function OnboardingPlanPage() {
+  const businessId = await resolveOnboardingBusinessId();
+  const supabase = await createClient();
+  const { data: business } = await supabase
+    .from("businesses")
+    .select("subscription_status")
+    .eq("id", businessId)
+    .single();
+
+  const status = business?.subscription_status;
+  const subscribed = status === "active" || status === "trialing";
+  // Cheap presence check only — the checkout route does the full config
+  // validation and 503s; this just avoids sending users to a dead link.
+  const billingLive = Boolean(process.env.STRIPE_SECRET_KEY);
+
+  return (
+    <OnboardingShell
+      step={7}
+      title="Pick a plan"
+      subtitle="Change or cancel anytime from Settings."
+    >
+      {subscribed ? (
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 rounded-md border border-line bg-paper px-3 py-2.5 text-sm text-ink-soft">
+            <span className="h-2 w-2 shrink-0 rounded-full bg-gauge-green" />
+            {status === "trialing" ? "Your trial is active — you're all set." : "Your subscription is active — you're all set."}
+          </div>
+          <Link
+            href="/onboarding/done"
+            className="flex h-12 w-full items-center justify-center rounded-full bg-accent-blue font-semibold text-white transition-colors hover:bg-accent-blue-deep"
+          >
+            Continue
+          </Link>
+        </div>
+      ) : billingLive ? (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            {PLANS.map((p) => (
+              <a
+                key={p.plan}
+                href={`/api/billing/checkout?plan=${p.plan}`}
+                className="flex items-center justify-between rounded-md border border-line bg-paper px-3 py-2 text-sm hover:border-accent-blue"
+              >
+                <span className="font-medium text-ink">{p.label}</span>
+                <span className="text-muted">{p.price}</span>
+              </a>
+            ))}
+          </div>
+          <p className="text-center">
+            <Link href="/onboarding/done" className="text-sm font-medium text-muted transition-colors hover:text-ink">
+              Skip for now
+            </Link>
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <p className="text-sm text-ink-soft">Billing isn&rsquo;t live yet — you&rsquo;re on the house for now.</p>
+          <Link
+            href="/onboarding/done"
+            className="flex h-12 w-full items-center justify-center rounded-full bg-accent-blue font-semibold text-white transition-colors hover:bg-accent-blue-deep"
+          >
+            Continue
+          </Link>
+        </div>
+      )}
+    </OnboardingShell>
+  );
+}

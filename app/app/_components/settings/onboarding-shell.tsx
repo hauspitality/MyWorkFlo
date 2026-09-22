@@ -1,6 +1,15 @@
 import type { ReactNode } from "react";
 
-const STEPS = ["Business", "Hours", "Service area", "Appointment types", "Emergency keywords", "Control mode"];
+const STEPS = [
+  "Business",
+  "Hours",
+  "Service area",
+  "Appointment types",
+  "Emergency keywords",
+  "Control mode",
+  "Calendar",
+  "Plan",
+];
 
 export function OnboardingShell({
   step,

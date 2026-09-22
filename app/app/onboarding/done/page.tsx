@@ -19,8 +19,8 @@ export default async function OnboardingDonePage() {
           {business?.name ?? "You"}&rsquo;re set up
         </h1>
         <p className="mb-8 text-sm text-muted">
-          A missed call will now get a text back automatically. Connecting your Google Calendar and setting up
-          billing are the two things left — you can add both anytime from Settings.
+          A missed call will now get a text back automatically. Your calendar connection and plan — like
+          everything else you just set up — can be changed anytime from Settings.
         </p>
         <Link
           href="/dashboard"

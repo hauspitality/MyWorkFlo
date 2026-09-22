@@ -7,10 +7,10 @@ import { checkAutopilotEligibility } from "@/lib/ai/autopilotEligibility";
 import { checkAvailability } from "@/lib/ai/tools";
 import { createCalendarEventIfConnected } from "@/lib/calendar/google";
 import { getEmergencyAcknowledgment } from "@/lib/hvac/emergencyScripts";
+import { detectEmergencySignal } from "@/lib/hvac/emergencySignals";
 import { getIssueType } from "@/lib/hvac/taxonomy";
-import { isTwilioConfigured, sendSms } from "@/lib/twilio/client";
-import { sendPushToBusiness } from "@/lib/push/send";
-import type { AiDecisionMetadata, ControlMode } from "@/lib/supabase/types";
+import { notifyBusinessStaff } from "./notify-staff";
+import type { AiDecisionMetadata, ControlMode, LeadStatus } from "@/lib/supabase/types";
 
 /**
  * The one production pipeline for an inbound customer message. Both entry
@@ -51,12 +51,21 @@ export interface ProcessInboundParams {
   language?: string;
   /** Actually transmit the outbound text; return the provider message sid (or null). Omit to persist without sending. */
   deliver?: (text: string) => Promise<string | null>;
+  /**
+   * Wait this long after persisting the inbound message; if a newer inbound
+   * arrives for the conversation during the wait, skip the AI turn — the
+   * newer message's turn sees this text in history and answers everything
+   * at once (rapid multi-part texts get one reply, not one each). Skipped
+   * for deterministic Layer-1 emergencies, which must never wait.
+   */
+  debounceMs?: number;
 }
 
 export type ExecutedPlan =
   | ActionPlan
   | { type: "emergency_acknowledgment"; text: string }
-  | { type: "duplicate_inbound" };
+  | { type: "duplicate_inbound" }
+  | { type: "debounced_deferred" };
 
 export interface ProcessInboundResult {
   conversationId: string;
@@ -164,30 +173,8 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
     }
   }
 
-  /**
-   * Best-effort staff alerting (web push + SMS to every active staff
-   * phone). Never throws — a notification failure must not break the
-   * customer-facing turn — but failures are audited, never silent.
-   */
-  async function notifyStaff(smsText: string, push: { title: string; body: string; url?: string }) {
-    try {
-      await sendPushToBusiness(businessId, push);
-    } catch (err) {
-      await insertAudit("staff_push_failed", "business", businessId, { error: err instanceof Error ? err.message : "push failed" });
-    }
-    if (!isTwilioConfigured()) return;
-    const { data: staffRows } = await db
-      .from("staff")
-      .select("id, phone_number")
-      .eq("business_id", businessId)
-      .eq("is_active", true);
-    for (const staff of staffRows ?? []) {
-      try {
-        await sendSms({ to: staff.phone_number, from: business!.twilio_phone_number ?? undefined, body: smsText });
-      } catch (err) {
-        await insertAudit("staff_sms_failed", "staff", staff.id, { error: err instanceof Error ? err.message : "sms failed" });
-      }
-    }
+  function notifyStaff(smsText: string, push: { title: string; body: string; url?: string }) {
+    return notifyBusinessStaff({ businessId, businessTwilioNumber: business!.twilio_phone_number, smsText, push });
   }
 
   const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -213,11 +200,53 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
     };
   }
 
+  // Debounce rapid multi-part texts: wait briefly, and if a newer inbound
+  // arrived meanwhile, defer to its turn (which sees this text in history).
+  // Deterministic Layer-1 emergencies never wait — the fixed safety script
+  // must go out immediately.
+  if (params.debounceMs && params.debounceMs > 0) {
+    const { data: settings } = await db
+      .from("service_settings")
+      .select("emergency_keywords")
+      .eq("business_id", businessId)
+      .maybeSingle();
+    const isEmergency = detectEmergencySignal(body, settings?.emergency_keywords ?? []);
+    if (!isEmergency) {
+      await new Promise((resolve) => setTimeout(resolve, params.debounceMs));
+      const { data: newest } = await db
+        .from("messages")
+        .select("id")
+        .eq("conversation_id", conversation.id)
+        .eq("direction", "inbound")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (newest && newest.id !== inboundMsg.id) {
+        return {
+          conversationId: conversation.id,
+          controlMode: conversation.control_mode_snapshot,
+          decision: null,
+          plan: { type: "debounced_deferred" },
+          shortCircuited: true,
+          toolCallsThisTurn: [],
+        };
+      }
+    }
+  }
+
   // History excludes the inbound row inserted above — runTurn folds the new
   // text in itself (engine.ts persists nothing by design).
   const context = await buildConversationContext(conversation.id, { excludeMessageId: inboundMsg.id });
   const turnResult = await runTurn(context, body);
   const decision = turnResult.decision;
+
+  // Hard cap from the plan: past ~8 exchanges without a booking, stop
+  // looping and get a person involved — regardless of what the model
+  // thinks. The prompt asks for this too; this is the code guarantee.
+  if (conversation.turn_count >= 7 && !decision.emergency_flag && !decision.booking_ready && !decision.needs_human) {
+    decision.needs_human = true;
+    decision.needs_human_reason = `Conversation reached ${conversation.turn_count + 1} exchanges without resolution`;
+  }
 
   // Autopilot may only book a slot that (a) passes the standing eligibility
   // checks and (b) is a real, currently-open slot per checkAvailability —
@@ -448,6 +477,22 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
     // The turn's messages/side effects already persisted — losing the
     // conversation-state update is recoverable, but never silent.
     await insertAudit("conversation_update_failed", "conversation", conversation.id, { error: convoUpdateError.message });
+  }
+
+  // Keep leads.status meaningful for the Leads list (it was stuck on "new"
+  // forever otherwise). Emergency/priority → escalated so escalations stay
+  // visible on the lead itself, not just the conversation.
+  const LEAD_STATUS_BY_PLAN: Record<string, LeadStatus> = {
+    send_message: "qualifying",
+    queue_message_approval: "qualifying",
+    queue_booking_approval: "booking_pending_approval",
+    book_directly: "booked",
+    escalate_emergency: "escalated",
+    escalate_priority: "escalated",
+  };
+  const leadStatus = LEAD_STATUS_BY_PLAN[executedPlan.type];
+  if (leadStatus) {
+    await db.from("leads").update({ status: leadStatus }).eq("id", conversation.lead_id);
   }
 
   return {

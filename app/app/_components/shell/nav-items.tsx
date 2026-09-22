@@ -33,6 +33,14 @@ export function ApprovalsIcon({ className }: NavIconProps) {
   );
 }
 
+export function ActivityIcon({ className }: NavIconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className={className}>
+      <path d="M3 12h4l2.5-6.5 4.5 13 2.5-6.5H21" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function SettingsIcon({ className }: NavIconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className={className}>
@@ -54,5 +62,6 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Home", Icon: HomeIcon },
   { href: "/dashboard/leads", label: "Leads", Icon: LeadsIcon },
   { href: "/dashboard/approvals", label: "Approvals", Icon: ApprovalsIcon },
+  { href: "/dashboard/activity", label: "Activity", Icon: ActivityIcon },
   { href: "/dashboard/settings", label: "Settings", Icon: SettingsIcon },
 ];
