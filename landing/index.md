@@ -60,4 +60,4 @@ Home service calls can be urgent. MyWorkFlo knows its limits: it won't guess at 
 
 ---
 
-[Sign in to the app](https://app.myworkflo.com/login) · [HTML version](https://myworkflo.com/)
+[Sign in to the app](https://app.myworkflo.com/login) · [HTML version](https://myworkflo.com/) · [MyWorkFlo alternatives compared](https://myworkflo.com/alternatives)

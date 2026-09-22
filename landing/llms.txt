@@ -23,4 +23,7 @@
 
 - [Homepage](https://myworkflo.com/)
 - [Markdown version of the homepage](https://myworkflo.com/index.md)
+- [MyWorkFlo alternatives — honest comparison of Smith.ai, Podium, Avoca, Allo, Retell AI, and Ruby](https://myworkflo.com/alternatives)
+- [MyWorkFlo vs Smith.ai](https://myworkflo.com/compare/myworkflo-vs-smith-ai)
+- [MyWorkFlo vs Podium](https://myworkflo.com/compare/myworkflo-vs-podium)
 - [App sign-in](https://app.myworkflo.com/login)
