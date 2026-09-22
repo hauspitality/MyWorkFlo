@@ -66,7 +66,7 @@ export default async function MagicLinkApprovalPage({ params }: { params: Promis
           {TYPE_LABEL[approval.type] ?? approval.type}
         </span>
       </div>
-      <p className="rounded-md border border-line bg-paper p-3 text-sm text-ink">{summary}</p>
+      <p className="rounded-xl bg-paper px-3.5 py-2.5 text-sm text-ink">{summary}</p>
       <div className="mt-5">
         <TokenButtons token={token} approvalType={approval.type} />
       </div>
@@ -136,7 +136,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           </svg>
           <span className="text-lg font-semibold">MyWorkFlo</span>
         </div>
-        <div className="rounded-lg border border-line bg-card p-6">{children}</div>
+        <div className="rounded-2xl border border-line bg-card p-6 shadow-card">{children}</div>
       </div>
     </main>
   );

@@ -1,13 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { OnboardingShell } from "@/app/_components/settings/onboarding-shell";
+import { PlanPicker } from "@/app/_components/settings/plan-picker";
 import { resolveOnboardingBusinessId } from "../_lib";
-
-const PLANS = [
-  { plan: "starter", label: "Starter", price: "$119/mo" },
-  { plan: "growth", label: "Growth", price: "$299/mo" },
-  { plan: "pro", label: "Pro", price: "$599/mo" },
-] as const;
 
 export default async function OnboardingPlanPage() {
   const businessId = await resolveOnboardingBusinessId();
@@ -45,18 +40,7 @@ export default async function OnboardingPlanPage() {
         </div>
       ) : billingLive ? (
         <div className="space-y-6">
-          <div className="space-y-2">
-            {PLANS.map((p) => (
-              <a
-                key={p.plan}
-                href={`/api/billing/checkout?plan=${p.plan}`}
-                className="flex items-center justify-between rounded-md border border-line bg-paper px-3 py-2 text-sm hover:border-accent-blue"
-              >
-                <span className="font-medium text-ink">{p.label}</span>
-                <span className="text-muted">{p.price}</span>
-              </a>
-            ))}
-          </div>
+          <PlanPicker />
           <p className="text-center">
             <Link href="/onboarding/done" className="text-sm font-medium text-muted transition-colors hover:text-ink">
               Skip for now

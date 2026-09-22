@@ -89,6 +89,7 @@ function SearchField() {
         type="search"
         name="q"
         placeholder="Search leads…"
+        aria-label="Search leads"
         className="h-10 w-full rounded-full border border-line bg-paper pl-10 pr-4 text-sm text-ink outline-none transition-colors placeholder:text-faint focus:border-accent-blue/50 focus:bg-card"
       />
     </form>

@@ -196,7 +196,7 @@ export async function getAppointmentTypes(
   input: { issue_code?: string },
 ): Promise<AppointmentTypeWithPricingFlag[]> {
   const supabase = createServiceClient();
-  let query = supabase
+  const query = supabase
     .from("appointment_types")
     .select("*, pricing_guidance(*)")
     .eq("business_id", ctx.businessId)

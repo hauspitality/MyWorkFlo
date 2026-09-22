@@ -1,43 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Card, Chip, InitialAvatar, type ChipTone } from "@/app/_components/ui";
-
-const STATUS_TONE: Record<string, ChipTone> = {
-  active: "blue",
-  awaiting_staff_approval: "amber",
-  booked: "green",
-  escalated_emergency: "red",
-  escalated_priority: "red",
-  closed: "neutral",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  active: "Active",
-  awaiting_staff_approval: "Awaiting approval",
-  booked: "Booked",
-  escalated_emergency: "Emergency",
-  escalated_priority: "Escalated",
-  closed: "Closed",
-};
-
-function formatIssue(code: string | null): string {
-  if (!code) return "Not yet determined";
-  const words = code.toLowerCase().replaceAll("_", " ").replaceAll("-", " ");
-  return words.charAt(0).toUpperCase() + words.slice(1);
-}
-
-function formatRelative(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const minutes = Math.round(diffMs / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.round(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
+import { Card, Chip, InitialAvatar } from "@/app/_components/ui";
+import { CONVERSATION_STATUS_LABEL, CONVERSATION_STATUS_TONE } from "@/app/_components/conversation-status";
+import { formatPhone, formatRelative, humanizeCode } from "@/lib/format";
+import { LeadRow } from "./lead-row";
 
 export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const supabase = await createClient();
@@ -97,6 +64,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
           name="q"
           defaultValue={q ?? ""}
           placeholder="Search leads…"
+          aria-label="Search leads"
           className="h-10 w-full rounded-full border border-line bg-card px-4 text-sm text-ink shadow-card outline-none placeholder:text-faint focus:border-accent-blue/50"
         />
       </form>
@@ -127,13 +95,15 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                 <Card className="flex items-center gap-3 p-4">
                   <InitialAvatar label={c.lead?.name || c.lead?.source_phone_number || "?"} className="h-9 w-9 text-xs" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-ink">{c.lead?.name || c.lead?.source_phone_number || "Unknown"}</p>
+                    <p className="truncate text-sm font-medium text-ink">
+                      {c.lead?.name || formatPhone(c.lead?.source_phone_number) || "Unknown"}
+                    </p>
                     <p className="mt-0.5 truncate text-xs text-muted">
-                      {formatIssue(c.matched_issue_code)} &middot; {formatRelative(c.last_message_at)}
+                      {humanizeCode(c.matched_issue_code, "Not yet determined")} &middot; {formatRelative(c.last_message_at)}
                     </p>
                   </div>
-                  <Chip tone={STATUS_TONE[c.status] ?? "neutral"} className="shrink-0">
-                    {STATUS_LABEL[c.status] ?? c.status}
+                  <Chip tone={CONVERSATION_STATUS_TONE[c.status] ?? "neutral"} className="shrink-0">
+                    {CONVERSATION_STATUS_LABEL[c.status] ?? humanizeCode(c.status)}
                   </Chip>
                 </Card>
               </Link>
@@ -154,30 +124,34 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
               </thead>
               <tbody>
                 {rows.map((c) => (
-                  <tr key={c.id} className="border-t border-line transition-colors hover:bg-paper/60">
+                  <LeadRow key={c.id} href={`/dashboard/leads/${c.id}`} className="border-t border-line transition-colors hover:bg-paper/60">
                     <td className="px-6 py-3">
                       <Link href={`/dashboard/leads/${c.id}`} className="group flex items-center gap-3">
                         <InitialAvatar label={c.lead?.name || c.lead?.source_phone_number || "?"} className="h-9 w-9 text-xs" />
                         <span className="min-w-0">
                           <span className="block truncate font-medium text-ink group-hover:text-accent-blue">
-                            {c.lead?.name || c.lead?.source_phone_number || "Unknown"}
+                            {c.lead?.name || formatPhone(c.lead?.source_phone_number) || "Unknown"}
                           </span>
-                          {c.lead?.name && <span className="block truncate text-xs tabular-nums text-muted">{c.lead.source_phone_number}</span>}
+                          {c.lead?.name && (
+                            <span className="block truncate text-xs tabular-nums text-muted">{formatPhone(c.lead.source_phone_number)}</span>
+                          )}
                         </span>
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-ink-soft">
-                      {formatIssue(c.matched_issue_code)}
+                      {humanizeCode(c.matched_issue_code, "Not yet determined")}
                       {c.detected_language && c.detected_language !== "en" ? (
                         <span className="ml-2 text-xs uppercase text-muted">{c.detected_language}</span>
                       ) : null}
                     </td>
                     <td className="px-4 py-3 tabular-nums text-ink-soft">{c.turn_count}</td>
                     <td className="px-4 py-3">
-                      <Chip tone={STATUS_TONE[c.status] ?? "neutral"}>{STATUS_LABEL[c.status] ?? c.status}</Chip>
+                      <Chip tone={CONVERSATION_STATUS_TONE[c.status] ?? "neutral"}>
+                        {CONVERSATION_STATUS_LABEL[c.status] ?? humanizeCode(c.status)}
+                      </Chip>
                     </td>
                     <td className="px-6 py-3 text-right text-xs tabular-nums text-muted">{formatRelative(c.last_message_at)}</td>
-                  </tr>
+                  </LeadRow>
                 ))}
               </tbody>
             </table>

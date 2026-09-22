@@ -55,6 +55,68 @@ export function Chip({ tone = "neutral", className = "", children }: { tone?: Ch
   );
 }
 
+export type ButtonVariant = "primary" | "secondary" | "danger";
+export type ButtonSize = "md" | "lg";
+
+const BUTTON_VARIANT: Record<ButtonVariant, string> = {
+  primary: "bg-accent-blue font-semibold text-white hover:bg-accent-blue-deep",
+  secondary: "border border-line font-semibold text-ink-soft hover:bg-paper",
+  danger: "border border-line font-medium text-gauge-red hover:bg-gauge-red-soft",
+};
+
+const BUTTON_SIZE: Record<ButtonSize, string> = {
+  md: "h-10 px-4 text-[13px]",
+  lg: "h-12 w-full px-6 text-[15px]",
+};
+
+function buttonClasses(variant: ButtonVariant, size: ButtonSize, className: string): string {
+  return `inline-flex items-center justify-center gap-2 rounded-full transition-colors disabled:opacity-60 ${BUTTON_VARIANT[variant]} ${BUTTON_SIZE[size]} ${className}`;
+}
+
+export function Button({
+  variant = "primary",
+  size = "md",
+  className = "",
+  type,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize }) {
+  return <button type={type ?? "button"} {...props} className={buttonClasses(variant, size, className)} />;
+}
+
+export function ButtonLink({
+  href,
+  variant = "primary",
+  size = "md",
+  className = "",
+  children,
+}: {
+  href: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const classes = buttonClasses(variant, size, className);
+  // API routes and external protocols (tel:, sms:, https:) must bypass client routing.
+  const external = href.startsWith("/api/") || /^[a-z]+:/.test(href);
+  if (external) {
+    return (
+      <a href={href} className={classes}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={classes}>
+      {children}
+    </Link>
+  );
+}
+
+export function Skeleton({ className = "" }: { className?: string }) {
+  return <div aria-hidden className={"animate-pulse rounded-xl bg-line " + className} />;
+}
+
 export function InitialAvatar({ label, className = "h-9 w-9 text-sm" }: { label: string; className?: string }) {
   const initial = (label.match(/[a-zA-Z]/)?.[0] ?? "").toUpperCase();
   return (

@@ -1,13 +1,12 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ApprovalCard } from "./approval-card";
-
-const TYPE_LABEL: Record<string, string> = {
-  outbound_message: "Message needs approval",
-  booking: "Booking needs approval",
-  emergency_escalation: "Emergency escalation",
-  other_exception: "Needs review",
-};
+import {
+  APPROVAL_TYPE_LABEL,
+  APPROVAL_TYPE_TONE,
+  approvalSummary,
+} from "@/app/_components/conversation-status";
+import { formatPhone, humanizeCode } from "@/lib/format";
 
 export default async function ApprovalsPage() {
   const supabase = await createClient();
@@ -21,17 +20,24 @@ export default async function ApprovalsPage() {
 
   const { data: approvals } = await supabase
     .from("approval_queue")
-    .select("id, type, payload, requested_at, expires_at")
+    .select(
+      "id, type, payload, requested_at, expires_at, conversation_id, conversations(matched_issue_code, leads(name, source_phone_number))",
+    )
     .eq("business_id", staffRow.business_id)
     .eq("status", "pending")
     .order("requested_at", { ascending: true });
 
-  return (
-    <main className="mx-auto max-w-6xl px-4 py-8 lg:px-8">
-      <h1 className="text-2xl font-semibold tracking-tight text-ink lg:text-3xl">Approvals</h1>
-      <p className="mt-1 text-sm text-muted">Oldest first.</p>
+  // Emergencies jump the queue; everything else stays oldest-first.
+  const sorted = [...(approvals ?? [])].sort(
+    (a, b) => Number(b.type === "emergency_escalation") - Number(a.type === "emergency_escalation"),
+  );
 
-      {!approvals?.length ? (
+  return (
+    <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <h1 className="text-2xl font-semibold tracking-tight text-ink lg:text-3xl">Approvals</h1>
+      <p className="mt-1 text-sm text-muted">Emergencies first, then oldest.</p>
+
+      {!sorted.length ? (
         <div className="mt-6 flex flex-col items-center rounded-2xl border border-line bg-card px-6 py-10 text-center shadow-card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-8 w-8 text-gauge-green" aria-hidden="true">
             <circle cx="12" cy="12" r="8.5" />
@@ -41,19 +47,22 @@ export default async function ApprovalsPage() {
           <p className="mt-1 text-xs text-muted">Nothing is waiting on your approval right now.</p>
         </div>
       ) : (
-        <div className="mt-6 space-y-2">
-          {approvals.map((a) => {
-            const payload = a.payload as Record<string, unknown>;
-            const summary =
-              (payload.draft_text as string) ?? (payload.reason as string) ?? (payload.holding_text as string) ?? "See conversation for details.";
+        <div className="mt-6 space-y-3">
+          {sorted.map((a) => {
+            const conversation = Array.isArray(a.conversations) ? a.conversations[0] : a.conversations;
+            const lead = Array.isArray(conversation?.leads) ? conversation?.leads[0] : conversation?.leads;
             return (
               <ApprovalCard
                 key={a.id}
                 id={a.id}
-                typeLabel={TYPE_LABEL[a.type] ?? a.type}
-                summary={summary}
+                typeLabel={APPROVAL_TYPE_LABEL[a.type] ?? humanizeCode(a.type)}
+                tone={APPROVAL_TYPE_TONE[a.type] ?? "amber"}
+                summary={approvalSummary(a.payload as Record<string, unknown>)}
                 requestedAt={a.requested_at}
                 expiresAt={a.expires_at}
+                leadName={lead?.name || formatPhone(lead?.source_phone_number) || "Unknown caller"}
+                issueLabel={humanizeCode(conversation?.matched_issue_code) || undefined}
+                conversationId={a.conversation_id ?? undefined}
               />
             );
           })}

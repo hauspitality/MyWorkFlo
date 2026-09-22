@@ -17,8 +17,22 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/dashboard";
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error" | "signing-in">("idle");
+  // Lazy init: a fragment-token link should show "Signing you in…" from the
+  // first paint instead of flashing the form. This component is CSR-only
+  // (useSearchParams inside Suspense), but guard window for safety.
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error" | "signing-in">(() =>
+    typeof window !== "undefined" && window.location.hash.includes("access_token") ? "signing-in" : "idle",
+  );
   const [showEmailFallback, setShowEmailFallback] = useState(false);
+
+  // Already signed in (e.g. a bookmarked /login) → straight to the app.
+  useEffect(() => {
+    if (window.location.hash.includes("access_token")) return; // the fragment flow below owns this case
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace(next);
+    });
+  }, [next, router]);
 
   // Handles links that carry the session in the URL fragment (e.g. an
   // admin-generated link, or any implicit-flow edge case) rather than the
@@ -30,7 +44,6 @@ function LoginForm() {
     const refresh_token = hash.get("refresh_token");
     if (!access_token || !refresh_token) return;
 
-    setStatus("signing-in");
     const supabase = createClient();
     supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
       if (error) {
@@ -72,7 +85,7 @@ function LoginForm() {
   return (
     <main className="flex min-h-full flex-1 items-center justify-center px-6 py-16">
       <div className="w-full max-w-sm">
-        <div className="mb-8 flex items-center gap-2.5">
+        <div className="mb-2 flex items-center gap-2.5">
           <svg viewBox="0 0 100 100" className="h-8 w-8" aria-hidden="true">
             <circle cx="50" cy="50" r="37" fill="none" stroke="#96692c" strokeWidth="7" />
             <line x1="50" y1="10" x2="50" y2="22" stroke="#96692c" strokeWidth="7" strokeLinecap="round" />
@@ -91,6 +104,7 @@ function LoginForm() {
           </svg>
           <span className="text-lg font-semibold">MyWorkFlo</span>
         </div>
+        <p className="mb-8 text-sm text-muted">The AI front desk for HVAC &amp; home-service teams.</p>
 
         {status === "signing-in" ? (
           <div className="rounded-2xl border border-line bg-card p-6">
@@ -175,6 +189,23 @@ function LoginForm() {
             )}
           </div>
         )}
+
+        <div className="mt-10 space-y-2 text-center">
+          <p className="text-sm text-muted">
+            <a href="https://myworkflo.com" className="font-medium text-accent-blue hover:text-accent-blue-deep">
+              See how MyWorkFlo works
+            </a>
+          </p>
+          <p className="text-xs text-faint">
+            <a href="/privacy" className="hover:text-muted">
+              Privacy
+            </a>
+            {" · "}
+            <a href="/terms" className="hover:text-muted">
+              Terms
+            </a>
+          </p>
+        </div>
       </div>
     </main>
   );

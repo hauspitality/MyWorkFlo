@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { approveApprovalAction, declineApprovalAction } from "@/lib/approvals/actions";
+import { Button, Chip, type ChipTone } from "@/app/_components/ui";
+import { TONE_BAR } from "@/app/_components/conversation-status";
+import { formatCompact } from "@/lib/format";
 
 interface ApprovalCardProps {
   id: string;
@@ -9,9 +14,25 @@ interface ApprovalCardProps {
   summary: string;
   requestedAt: string;
   expiresAt: string;
+  tone?: ChipTone;
+  /** Who the message/booking is for — omit only when the card already sits inside that conversation. */
+  leadName?: string;
+  issueLabel?: string;
+  conversationId?: string;
 }
 
-export function ApprovalCard({ id, typeLabel, summary, requestedAt, expiresAt }: ApprovalCardProps) {
+export function ApprovalCard({
+  id,
+  typeLabel,
+  summary,
+  requestedAt,
+  expiresAt,
+  tone = "amber",
+  leadName,
+  issueLabel,
+  conversationId,
+}: ApprovalCardProps) {
+  const router = useRouter();
   const [busy, setBusy] = useState<"approve" | "decline" | null>(null);
   const [resolved, setResolved] = useState<"approved" | "declined" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -33,44 +54,60 @@ export function ApprovalCard({ id, typeLabel, summary, requestedAt, expiresAt }:
     setBusy(null);
     if (result.ok) {
       setResolved(kind === "approve" ? "approved" : "declined");
+      // Let the confirmation register, then re-fetch so the queue and bell badge stay truthful.
+      setTimeout(() => router.refresh(), 900);
     } else {
       setError(result.error ?? "Something went wrong. Try again.");
     }
   }
 
   return (
-    <div className="rounded-2xl border border-line bg-card p-5 shadow-card">
-      <div className="flex items-center justify-between gap-3">
-        <span className="rounded-full bg-gauge-amber-soft px-2.5 py-1 text-xs font-medium text-gauge-amber">{typeLabel}</span>
-        <span className="text-xs text-muted">{new Date(requestedAt).toLocaleString()}</span>
-      </div>
-      <p className="mt-3 text-sm text-ink-soft">{summary}</p>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <span className="text-xs text-muted">{expiresHint ?? " "}</span>
-        {resolved ? (
-          <span className="text-sm font-medium text-ink-soft">{resolved === "approved" ? "Approved" : "Declined"}</span>
-        ) : (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => act("decline")}
-              disabled={busy !== null}
-              className="h-9 rounded-full border border-line px-4 text-sm font-medium text-gauge-red transition-colors hover:bg-gauge-red-soft disabled:opacity-60"
-            >
-              {busy === "decline" ? "Declining…" : "Decline"}
-            </button>
-            <button
-              type="button"
-              onClick={() => act("approve")}
-              disabled={busy !== null}
-              className="h-9 rounded-full bg-accent-blue px-4 text-sm font-semibold text-white transition-colors hover:bg-accent-blue-deep disabled:opacity-60"
-            >
-              {busy === "approve" ? "Approving…" : "Approve"}
-            </button>
-          </div>
+    <div className="flex gap-4 rounded-2xl border border-line bg-card p-5 shadow-card">
+      <span className={`w-1 shrink-0 self-stretch rounded-full ${TONE_BAR[tone]}`} aria-hidden />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Chip tone={tone}>{typeLabel}</Chip>
+          <span className="text-xs tabular-nums text-muted">{formatCompact(requestedAt)}</span>
+        </div>
+
+        {leadName && (
+          <p className="mt-2.5 truncate text-sm font-semibold text-ink">
+            {leadName}
+            {issueLabel && <span className="font-normal text-muted"> · {issueLabel}</span>}
+          </p>
         )}
+
+        <p className="mt-2 rounded-xl bg-paper px-3.5 py-2.5 text-sm text-ink-soft">{summary}</p>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="text-xs tabular-nums text-muted">{expiresHint ?? " "}</span>
+            {conversationId && (
+              <Link
+                href={`/dashboard/leads/${conversationId}`}
+                className="text-[13px] font-medium text-accent-blue transition-colors hover:text-accent-blue-deep"
+              >
+                View conversation
+              </Link>
+            )}
+          </div>
+          {resolved ? (
+            <span className={`text-sm font-medium ${resolved === "approved" ? "text-gauge-green" : "text-ink-soft"}`}>
+              {resolved === "approved" ? "Approved ✓" : "Declined"}
+            </span>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button variant="danger" onClick={() => act("decline")} disabled={busy !== null}>
+                {busy === "decline" ? "Declining…" : "Decline"}
+              </Button>
+              <Button onClick={() => act("approve")} disabled={busy !== null}>
+                {busy === "approve" ? "Approving…" : "Approve"}
+              </Button>
+            </div>
+          )}
+        </div>
+        {error && <p className="mt-2 text-sm text-gauge-red">{error}</p>}
       </div>
-      {error && <p className="mt-2 text-sm text-gauge-red">{error}</p>}
     </div>
   );
 }

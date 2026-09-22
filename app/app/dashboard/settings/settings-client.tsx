@@ -4,11 +4,14 @@ import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/browser";
 import { ControlModeSelector } from "@/app/_components/settings/control-mode-selector";
-import { UserAvatar } from "@/app/_components/shell/dashboard-shell";
 import { HoursEditor } from "@/app/_components/settings/hours-editor";
 import { ServiceAreaEditor } from "@/app/_components/settings/service-area-editor";
 import { AppointmentTypesEditor, type AppointmentTypeRow } from "@/app/_components/settings/appointment-types-editor";
 import { EmergencyKeywordsEditor } from "@/app/_components/settings/emergency-keywords-editor";
+import { PlanPicker } from "@/app/_components/settings/plan-picker";
+import { Button, ButtonLink, Card, CardHeader, Chip, InitialAvatar } from "@/app/_components/ui";
+import { PushDemo } from "../push-demo";
+import { formatPhone, humanizeCode } from "@/lib/format";
 import {
   updateControlMode,
   updateBusinessHours,
@@ -19,21 +22,13 @@ import {
 } from "@/lib/business-settings/actions";
 import type { BusinessHours, ControlMode, ServiceArea, Staff } from "@/lib/supabase/types";
 
-function Section({ title, children, defaultOpen = false }: { title: string; children: ReactNode; defaultOpen?: boolean }) {
+function Section({ title, chip, children }: { title: string; chip?: ReactNode; children: ReactNode }) {
   return (
-    <details open={defaultOpen} className="group rounded-lg border border-line bg-card">
-      <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-ink marker:content-none">
-        <span className="mr-2 inline-block text-muted transition-transform group-open:rotate-90">›</span>
-        {title}
-      </summary>
-      <div className="border-t border-line px-4 py-4">{children}</div>
-    </details>
+    <Card>
+      <CardHeader title={title}>{chip}</CardHeader>
+      <div className="px-5 pb-5 pt-2 sm:px-6">{children}</div>
+    </Card>
   );
-}
-
-function SavedFlash({ show }: { show: boolean }) {
-  if (!show) return null;
-  return <p className="mb-2 text-xs text-accent-blue">Saved.</p>;
 }
 
 export function SettingsClient({
@@ -67,49 +62,22 @@ export function SettingsClient({
     router.push("/login");
   }
 
-  const [flashKey, setFlashKey] = useState<string | null>(null);
-
-  function flash(key: string) {
-    setFlashKey(key);
-    setTimeout(() => setFlashKey((k) => (k === key ? null : k)), 2000);
-  }
+  const planActive = subscriptionStatus === "active" || subscriptionStatus === "trialing";
 
   return (
     <div className="mt-6 space-y-6">
-      <div className="rounded-lg border border-accent-blue/30 bg-accent-blue/5 p-4">
-        <h2 className="mb-1 text-sm font-semibold text-ink">Control mode</h2>
-        <SavedFlash show={flashKey === "control_mode"} />
-        <ControlModeSelector
-          initial={controlMode}
-          onSave={async (mode) => {
-            await updateControlMode(mode);
-            flash("control_mode");
-          }}
-        />
-      </div>
+      <Section title="Control mode">
+        <ControlModeSelector initial={controlMode} onSave={updateControlMode} />
+      </Section>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-3 lg:col-span-2">
+      <div className="grid items-start gap-6 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
           <Section title="Business hours">
-            <SavedFlash show={flashKey === "hours"} />
-            <HoursEditor
-              initial={businessHours}
-              onSave={async (hours) => {
-                await updateBusinessHours(hours);
-                flash("hours");
-              }}
-            />
+            <HoursEditor initial={businessHours} onSave={updateBusinessHours} />
           </Section>
 
           <Section title="Service area">
-            <SavedFlash show={flashKey === "service_area"} />
-            <ServiceAreaEditor
-              initial={serviceArea}
-              onSave={async (area) => {
-                await updateServiceArea(area);
-                flash("service_area");
-              }}
-            />
+            <ServiceAreaEditor initial={serviceArea} onSave={updateServiceArea} />
           </Section>
 
           <Section title="Appointment types & pricing">
@@ -117,91 +85,88 @@ export function SettingsClient({
           </Section>
 
           <Section title="Emergency keywords">
-            <SavedFlash show={flashKey === "emergency_keywords"} />
-            <EmergencyKeywordsEditor
-              initial={emergencyKeywords}
-              onSave={async (keywords) => {
-                await updateEmergencyKeywords(keywords);
-                flash("emergency_keywords");
-              }}
-            />
+            <EmergencyKeywordsEditor initial={emergencyKeywords} onSave={updateEmergencyKeywords} />
           </Section>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           <Section title="Staff">
             <div className="space-y-2">
               {staff.map((s) => (
-                <div key={s.id} className="flex items-center justify-between rounded-md border border-line bg-paper px-3 py-2 text-sm">
-                  <span className="text-ink">{s.name}</span>
-                  <span className="text-muted">{s.phone_number}</span>
-                  <span className="text-xs uppercase text-muted">{s.role}</span>
+                <div key={s.id} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm">
+                  <span className="min-w-0 truncate font-medium text-ink">{s.name}</span>
+                  <span className="shrink-0 tabular-nums text-muted">{formatPhone(s.phone_number)}</span>
+                  <Chip className="shrink-0">{humanizeCode(s.role)}</Chip>
                 </div>
               ))}
-              <p className="text-xs text-muted">Inviting additional staff is coming soon.</p>
+              <p className="pt-1 text-xs text-muted">Inviting additional staff is coming soon.</p>
             </div>
           </Section>
 
-          <Section title="Calendar connection">
+          <Section
+            title="Calendar"
+            chip={calendarConnected ? <Chip tone="green">Connected</Chip> : <Chip tone="amber">Not connected</Chip>}
+          >
             {calendarConnected ? (
-              <div className="flex items-center gap-2 text-sm text-ink-soft">
-                <span className="h-2 w-2 rounded-full bg-gauge-green" />
+              <p className="text-sm text-ink-soft">
                 Google Calendar is connected. Availability and bookings use your real calendar.
-              </div>
+              </p>
             ) : (
               <div>
                 <p className="text-sm text-ink-soft">
                   Not connected — the AI offers simulated availability, and Autopilot bookings fall back to
                   staff approval until this is set up.
                 </p>
-                <a
-                  href="/api/calendar/google/connect"
-                  className="mt-3 inline-block rounded-md bg-accent-blue px-4 py-2 text-sm font-medium text-white hover:bg-accent-blue-deep"
-                >
+                <ButtonLink href="/api/calendar/google/connect" className="mt-3">
                   Connect Google Calendar
-                </a>
+                </ButtonLink>
               </div>
             )}
           </Section>
 
-          <Section title="Billing & plan">
-            {subscriptionStatus ? (
-              <p className="text-sm text-ink-soft">Subscription status: {subscriptionStatus}.</p>
-            ) : (
+          <Section
+            title="Billing & plan"
+            chip={
+              subscriptionStatus === "trialing" ? (
+                <Chip tone="blue">Trial</Chip>
+              ) : planActive ? (
+                <Chip tone="green">Active</Chip>
+              ) : (
+                <Chip>No plan</Chip>
+              )
+            }
+          >
+            {planActive ? (
+              <p className="text-sm text-ink-soft">
+                {subscriptionStatus === "trialing" ? "Your trial is active." : "Your subscription is active."}
+              </p>
+            ) : subscriptionStatus ? (
               <div>
-                <p className="text-sm text-ink-soft">No active subscription. Pick a plan to get started:</p>
-                <div className="mt-3 space-y-2">
-                  {[
-                    { plan: "starter", label: "Starter", price: "$119/mo" },
-                    { plan: "growth", label: "Growth", price: "$299/mo" },
-                    { plan: "pro", label: "Pro", price: "$599/mo" },
-                  ].map((p) => (
-                    <a
-                      key={p.plan}
-                      href={`/api/billing/checkout?plan=${p.plan}`}
-                      className="flex items-center justify-between rounded-md border border-line bg-paper px-3 py-2 text-sm hover:border-accent-blue"
-                    >
-                      <span className="font-medium text-ink">{p.label}</span>
-                      <span className="text-muted">{p.price}</span>
-                    </a>
-                  ))}
+                <p className="text-sm text-ink-soft">Subscription status: {humanizeCode(subscriptionStatus)}.</p>
+                <div className="mt-3">
+                  <PlanPicker />
                 </div>
               </div>
+            ) : (
+              <div>
+                <p className="mb-3 text-sm text-ink-soft">No active subscription. Pick a plan to get started:</p>
+                <PlanPicker />
+              </div>
             )}
+          </Section>
+
+          <Section title="Notifications">
+            <PushDemo />
           </Section>
 
           <Section title="Account">
             <div className="flex items-center gap-2.5">
-              <UserAvatar label={userEmail} className="h-8 w-8" />
-              <span className="truncate text-sm text-ink-soft">{userEmail}</span>
+              <InitialAvatar label={userEmail} className="h-8 w-8 text-xs" />
+              <span className="min-w-0 truncate text-sm text-ink-soft">{userEmail}</span>
             </div>
-            <button
-              onClick={handleSignOut}
-              disabled={signingOut}
-              className="mt-3 rounded-md border border-line px-3 py-1.5 text-sm font-medium text-ink-soft hover:bg-paper disabled:opacity-50"
-            >
-              {signingOut ? "Signing out..." : "Sign out"}
-            </button>
+            <Button variant="secondary" onClick={handleSignOut} disabled={signingOut} className="mt-3">
+              {signingOut ? "Signing out…" : "Sign out"}
+            </Button>
           </Section>
         </div>
       </div>

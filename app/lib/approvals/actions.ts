@@ -40,6 +40,8 @@ async function resolveAsStaff(approvalId: string, approve: boolean): Promise<Res
   });
   revalidatePath("/dashboard/approvals");
   revalidatePath("/dashboard/leads", "layout");
+  // The pending-count badge lives in the dashboard layout — keep it truthful too.
+  revalidatePath("/dashboard", "layout");
   return result;
 }
 

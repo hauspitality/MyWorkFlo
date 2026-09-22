@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { timezoneLabel } from "@/lib/timezones";
 import { SettingsClient } from "./settings-client";
 import type { AppointmentTypeRow } from "@/app/_components/settings/appointment-types-editor";
 import type { BusinessHours, ControlMode, ServiceArea } from "@/lib/supabase/types";
@@ -47,10 +48,10 @@ export default async function SettingsPage() {
   });
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 lg:px-8">
-      <h1 className="text-2xl font-semibold text-ink lg:text-3xl">Settings</h1>
+    <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <h1 className="text-2xl font-semibold tracking-tight text-ink lg:text-3xl">Settings</h1>
       <p className="mt-1 text-sm text-muted">
-        {business?.name} &middot; {business?.timezone}
+        {business?.name} &middot; {timezoneLabel(business?.timezone)}
       </p>
 
       <SettingsClient

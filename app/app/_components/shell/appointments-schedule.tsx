@@ -83,11 +83,27 @@ export function AppointmentsSchedule({ appointments }: { appointments: ScheduleA
   const selectedAppointments = byDate.get(selectedDate) ?? [];
 
   const monthLabel = weekDays[3].toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const onCurrentWeek = localISODate(weekStart) === localISODate(startOfWeek(today));
+
+  function goToToday() {
+    setWeekStart(startOfWeek(today));
+    setSelectedDate(todayKey);
+  }
 
   return (
     <Card>
       <div className="flex items-center justify-between gap-3 px-5 pt-4 sm:px-6 sm:pt-5">
-        <h2 className="text-[15px] font-semibold text-ink">Schedule</h2>
+        <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink">
+          Schedule
+          {!onCurrentWeek && (
+            <button
+              onClick={goToToday}
+              className="rounded-full px-2 py-0.5 text-[13px] font-medium text-accent-blue transition-colors hover:bg-accent-blue-soft"
+            >
+              Today
+            </button>
+          )}
+        </h2>
         <div className="flex items-center gap-1">
           <span className="mr-1 text-[13px] font-medium text-muted">{monthLabel}</span>
           <button
@@ -110,15 +126,18 @@ export function AppointmentsSchedule({ appointments }: { appointments: ScheduleA
       <div className="grid grid-cols-7 px-3 pt-3 sm:px-4">
         {weekDays.map((day) => {
           const key = localISODate(day);
-          const hasAppt = byDate.has(key);
+          const dayCount = byDate.get(key)?.length ?? 0;
+          const hasAppt = dayCount > 0;
           const isSelected = key === selectedDate;
           const isToday = key === todayKey;
+          const fullDate = day.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
           return (
             <button
               key={key}
               onClick={() => setSelectedDate(key)}
               className="group flex min-h-11 flex-col items-center gap-1.5 rounded-xl py-2"
               aria-pressed={isSelected}
+              aria-label={`${fullDate} — ${dayCount === 0 ? "no appointments" : dayCount === 1 ? "1 appointment" : `${dayCount} appointments`}`}
             >
               <span className="text-[11px] font-medium text-muted">{WEEKDAY_LABELS[day.getDay()]}</span>
               <span

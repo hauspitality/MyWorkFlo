@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/app/_components/ui";
 import { EMERGENCY_CATEGORY_INFO } from "@/lib/hvac/emergencySignals";
 
 export function EmergencyKeywordsEditor({
@@ -15,6 +16,7 @@ export function EmergencyKeywordsEditor({
   const [keywords, setKeywords] = useState<string[]>(initial);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function addKeyword() {
@@ -34,6 +36,8 @@ export function EmergencyKeywordsEditor({
     setError(null);
     try {
       await onSave(keywords);
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
@@ -48,7 +52,7 @@ export function EmergencyKeywordsEditor({
           These always trigger an instant, pre-approved safety reply and notify your team right away — no
           exceptions, no waiting on your control mode setting.
         </p>
-        <div className="space-y-2 rounded-md border border-line bg-paper p-3">
+        <div className="space-y-2 rounded-xl border border-line bg-paper p-3.5">
           {EMERGENCY_CATEGORY_INFO.map((c) => (
             <div key={c.category} className="text-sm">
               <span className="font-medium text-ink">{c.label}:</span>{" "}
@@ -63,19 +67,25 @@ export function EmergencyKeywordsEditor({
           Add any extra words or phrases specific to your business — misspellings, brand names, local slang for
           a hazard. These trigger the same instant safety response.
         </p>
-        <div className="mb-2 flex flex-wrap gap-2">
-          {keywords.map((word) => (
-            <span
-              key={word}
-              className="flex items-center gap-1.5 rounded-full border border-line bg-card px-3 py-1 text-xs text-ink-soft"
-            >
-              {word}
-              <button onClick={() => removeKeyword(word)} className="text-muted hover:text-gauge-red" aria-label={`Remove ${word}`}>
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
+        {keywords.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {keywords.map((word) => (
+              <span
+                key={word}
+                className="flex items-center gap-0.5 rounded-full border border-line bg-card py-1 pl-3 pr-1 text-xs text-ink-soft"
+              >
+                {word}
+                <button
+                  onClick={() => removeKeyword(word)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-sm text-muted transition-colors hover:bg-gauge-red-soft hover:text-gauge-red"
+                  aria-label={`Remove ${word}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
         <div className="flex gap-2">
           <input
             value={draft}
@@ -87,22 +97,22 @@ export function EmergencyKeywordsEditor({
               }
             }}
             placeholder="e.g. popping sound"
-            className="flex-1 rounded-md border border-line bg-paper px-3 py-1.5 text-sm"
+            aria-label="New emergency keyword"
+            className="h-10 flex-1 rounded-xl border border-line bg-paper px-3.5 text-sm outline-none transition-colors placeholder:text-faint focus:border-accent-blue/50 focus:bg-card"
           />
-          <button onClick={addKeyword} className="rounded-md border border-line px-3 py-1.5 text-sm text-ink-soft">
+          <Button variant="secondary" onClick={addKeyword}>
             Add
-          </button>
+          </Button>
         </div>
       </div>
 
       {error && <p className="text-sm text-gauge-red">{error}</p>}
-      <button
-        onClick={handleSubmit}
-        disabled={saving}
-        className="rounded-md bg-accent-blue px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-      >
-        {saving ? "Saving..." : submitLabel}
-      </button>
+      <div className="flex items-center gap-3">
+        <Button onClick={handleSubmit} disabled={saving}>
+          {saving ? "Saving…" : submitLabel}
+        </Button>
+        {savedFlash && <span className="text-xs font-medium text-gauge-green">Saved ✓</span>}
+      </div>
     </div>
   );
 }

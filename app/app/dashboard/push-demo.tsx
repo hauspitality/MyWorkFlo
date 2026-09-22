@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@/app/_components/ui";
 import { sendTestNotification, subscribeUser, unsubscribeUser } from "./actions";
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -30,21 +31,22 @@ export function PushDemo() {
     setStatus(null);
     const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     if (!vapidPublicKey) {
-      setStatus({
-        text: "Missing NEXT_PUBLIC_VAPID_PUBLIC_KEY — run `npx web-push generate-vapid-keys`.",
-        isError: true,
-      });
+      setStatus({ text: "Push notifications aren’t available right now.", isError: true });
       return;
     }
 
-    const registration = await navigator.serviceWorker.ready;
-    const sub = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-    });
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const sub = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      });
 
-    await subscribeUser(sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } });
-    setSubscription(sub);
+      await subscribeUser(sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } });
+      setSubscription(sub);
+    } catch {
+      setStatus({ text: "Couldn’t enable push — check your browser’s notification permission.", isError: true });
+    }
   }
 
   async function handleUnsubscribe() {
@@ -64,64 +66,40 @@ export function PushDemo() {
   }
 
   if (!supported) {
-    return (
-      <div className="rounded-2xl border border-line bg-card p-5 shadow-card">
-        <p className="text-xs text-muted">Push notifications aren&rsquo;t supported in this browser.</p>
-      </div>
-    );
+    return <p className="text-sm text-muted">Push notifications aren&rsquo;t supported in this browser.</p>;
   }
 
   return (
-    <div className="rounded-2xl border border-line bg-card p-5 shadow-card">
-      <h2 className="mb-1 text-sm font-semibold text-ink">Push notifications</h2>
+    <div>
       {subscription ? (
         <div className="space-y-3">
-          <p className="text-xs text-muted">This device is subscribed.</p>
+          <p className="text-sm text-ink-soft">
+            <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-gauge-green" />
+            This device gets alerted when something needs your review.
+          </p>
           <label className="block">
             <span className="mb-1.5 block text-xs font-medium text-ink-soft">Test message</span>
             <input
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="h-10 w-full rounded-xl border border-line bg-paper px-3 text-sm outline-none transition-colors focus:border-accent-blue/50 focus:bg-card"
+              className="h-10 w-full rounded-xl border border-line bg-paper px-3.5 text-sm outline-none transition-colors focus:border-accent-blue/50 focus:bg-card"
             />
           </label>
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={handleSendTest}
-              className="h-10 rounded-full bg-accent-blue px-4 text-[13px] font-semibold text-white hover:bg-accent-blue-deep"
-            >
-              Send test
-            </button>
-            <button
-              type="button"
-              onClick={handleUnsubscribe}
-              className="h-10 rounded-full border border-line px-4 text-[13px] font-semibold text-ink-soft hover:bg-paper"
-            >
+            <Button onClick={handleSendTest}>Send test</Button>
+            <Button variant="secondary" onClick={handleUnsubscribe}>
               Disable
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-xs text-muted">
-            Enable push to get alerted here when something needs your review.
-          </p>
-          <button
-            type="button"
-            onClick={handleSubscribe}
-            className="h-10 rounded-full bg-accent-blue px-4 text-[13px] font-semibold text-white hover:bg-accent-blue-deep"
-          >
-            Enable push notifications
-          </button>
+          <p className="text-sm text-ink-soft">Get alerted here the moment something needs your review.</p>
+          <Button onClick={handleSubscribe}>Enable push notifications</Button>
         </div>
       )}
-      {status && (
-        <p className={`mt-3 text-xs ${status.isError ? "text-gauge-red" : "text-ink-soft"}`}>
-          {status.text}
-        </p>
-      )}
+      {status && <p className={`mt-3 text-xs ${status.isError ? "text-gauge-red" : "text-ink-soft"}`}>{status.text}</p>}
     </div>
   );
 }

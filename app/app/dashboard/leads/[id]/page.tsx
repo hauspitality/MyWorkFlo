@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { UserAvatar } from "@/app/_components/shell/dashboard-shell";
+import { ButtonLink, Card, CardHeader, Chip, InitialAvatar } from "@/app/_components/ui";
+import {
+  APPROVAL_TYPE_LABEL,
+  APPROVAL_TYPE_TONE,
+  CONVERSATION_STATUS_LABEL,
+  CONVERSATION_STATUS_TONE,
+  approvalSummary,
+} from "@/app/_components/conversation-status";
+import { formatDayLabel, formatPhone, formatTimeOfDay, humanizeCode } from "@/lib/format";
 import { ApprovalCard } from "../../approvals/approval-card";
-
-const APPROVAL_TYPE_LABEL: Record<string, string> = {
-  outbound_message: "Message needs approval",
-  booking: "Booking needs approval",
-  emergency_escalation: "Emergency escalation",
-  other_exception: "Needs review",
-};
 
 const FIELD_LABELS: Record<string, string> = {
   symptom_onset: "Symptom onset",
@@ -22,8 +23,19 @@ const FIELD_LABELS: Record<string, string> = {
   square_footage: "Square footage",
 };
 
+const LANGUAGE_LABELS: Record<string, string> = {
+  en: "English",
+  es: "Spanish",
+};
+
+const SENDER_LABELS: Record<string, string> = {
+  ai: "AI",
+  staff: "Staff",
+  system: "System",
+};
+
 function humanizeKey(key: string): string {
-  return FIELD_LABELS[key] ?? key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return FIELD_LABELS[key] ?? humanizeCode(key);
 }
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -68,118 +80,131 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     ([, value]) => value !== null && value !== undefined && value !== "",
   );
 
-  const serviceAddress = (conversation.collected_fields as Record<string, string>)?.service_address;
+  const details: Array<{ label: string; value: string }> = [
+    { label: "Issue", value: humanizeCode(conversation.matched_issue_code, "Not yet determined") },
+    {
+      label: "First contact",
+      value: lead?.first_contact_at
+        ? new Date(lead.first_contact_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+        : "—",
+    },
+    {
+      label: "Language",
+      value: LANGUAGE_LABELS[conversation.detected_language ?? "en"] ?? (conversation.detected_language ?? "en").toUpperCase(),
+    },
+    ...collectedFields.map(([key, value]) => ({ label: humanizeKey(key), value })),
+  ];
+
+  const customerLabel = lead?.name?.trim().split(/\s+/)[0] || "Customer";
+
+  let previousDay = "";
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8 lg:px-8">
-      <Link href="/dashboard/leads" className="text-sm text-accent-blue">
+    <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <Link href="/dashboard/leads" className="text-sm font-medium text-muted transition-colors hover:text-ink">
         ← Back to leads
       </Link>
 
-      <div className="mt-4 flex items-start justify-between gap-4 rounded-lg border border-line bg-card p-5">
-        <div className="flex items-center gap-3">
-          <UserAvatar label={lead?.name || lead?.source_phone_number || "?"} className="h-11 w-11 text-base" />
-          <div>
-            <h1 className="text-xl font-semibold text-ink">{lead?.name || "Unknown caller"}</h1>
-            <p className="text-sm text-muted">{lead?.source_phone_number}</p>
+      {/* Header */}
+      <Card className="mt-4 flex flex-wrap items-center justify-between gap-4 p-5 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <InitialAvatar label={lead?.name || lead?.source_phone_number || "?"} className="h-11 w-11 text-base" />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="truncate text-xl font-semibold tracking-tight text-ink">{lead?.name || "Unknown caller"}</h1>
+              <Chip tone={CONVERSATION_STATUS_TONE[conversation.status] ?? "neutral"}>
+                {CONVERSATION_STATUS_LABEL[conversation.status] ?? humanizeCode(conversation.status)}
+              </Chip>
+            </div>
+            <p className="mt-0.5 text-sm tabular-nums text-muted">{formatPhone(lead?.source_phone_number)}</p>
           </div>
         </div>
         {lead?.source_phone_number && (
           <div className="flex shrink-0 gap-2">
-            <a
-              href={`tel:${lead.source_phone_number}`}
-              className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-ink-soft hover:bg-paper"
-            >
+            <ButtonLink href={`tel:${lead.source_phone_number}`} variant="secondary">
               Call
-            </a>
-            <a
-              href={`sms:${lead.source_phone_number}`}
-              className="rounded-md bg-accent-blue px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-blue-deep"
-            >
-              Text
-            </a>
+            </ButtonLink>
+            <ButtonLink href={`sms:${lead.source_phone_number}`}>Text</ButtonLink>
           </div>
         )}
-      </div>
+      </Card>
 
-      {collectedFields.length > 0 && (
-        <div className="mt-4 rounded-lg border border-line bg-card p-4">
-          <h2 className="mb-2 text-sm font-semibold text-ink">At a glance</h2>
-          <p className="text-sm text-ink-soft">
-            {collectedFields.map(([key, value]) => `${humanizeKey(key)}: ${value}`).join(" · ")}
-          </p>
-        </div>
-      )}
-
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: "First contact", value: lead?.first_contact_at ? new Date(lead.first_contact_at).toLocaleDateString() : "—" },
-          {
-            label: "Issue",
-            value: conversation.matched_issue_code
-              ? conversation.matched_issue_code.toLowerCase().replaceAll("_", " ").replace(/^./, (c: string) => c.toUpperCase())
-              : "Not yet determined",
-          },
-          { label: "Language", value: conversation.detected_language ?? "en" },
-          { label: "Address", value: serviceAddress ?? "Not yet given" },
-        ].map((fact) => (
-          <div key={fact.label} className="rounded-lg border border-line bg-card p-3">
-            <p className="text-xs text-muted">{fact.label}</p>
-            <p className="mt-0.5 truncate text-sm font-medium text-ink">{fact.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {(pendingApprovals?.length ?? 0) > 0 && (
-        <div className="mt-4">
-          <h2 className="mb-2 text-sm font-semibold text-ink">Waiting on you</h2>
-          <div className="space-y-2">
-            {(pendingApprovals ?? []).map((a) => {
-              const payload = a.payload as Record<string, unknown>;
-              const summary =
-                (payload.draft_text as string) ??
-                (payload.reason as string) ??
-                (payload.holding_text as string) ??
-                "See conversation for details.";
-              return (
+      <div className="mt-4 grid items-start gap-4 lg:grid-cols-3">
+        {/* Rail — approvals first, then details; on mobile this sits above the thread */}
+        <div className="space-y-4 lg:col-start-3 lg:row-start-1">
+          {(pendingApprovals?.length ?? 0) > 0 && (
+            <div className="space-y-3">
+              {(pendingApprovals ?? []).map((a) => (
                 <ApprovalCard
                   key={a.id}
                   id={a.id}
-                  typeLabel={APPROVAL_TYPE_LABEL[a.type] ?? a.type}
-                  summary={summary}
+                  typeLabel={APPROVAL_TYPE_LABEL[a.type] ?? humanizeCode(a.type)}
+                  tone={APPROVAL_TYPE_TONE[a.type] ?? "amber"}
+                  summary={approvalSummary(a.payload as Record<string, unknown>)}
                   requestedAt={a.requested_at}
                   expiresAt={a.expires_at}
                 />
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <div className="mt-4 rounded-lg border border-line bg-card p-4">
-        <h2 className="mb-3 text-sm font-semibold text-ink">Thread</h2>
-        <div className="space-y-2">
-          {(messages ?? []).map((m) => (
-            <div key={m.id} className={m.sender === "customer" ? "text-left" : "text-right"}>
-              <div
-                className={
-                  "inline-block max-w-[80%] rounded-lg px-3 py-2 text-sm " +
-                  (m.sender === "customer" ? "bg-paper border border-line text-ink" : "bg-accent-blue/10 border border-accent-blue/30 text-ink")
-                }
-              >
-                <p>{m.body}</p>
-                <p className="mt-1 text-[11px] uppercase text-muted">
-                  {m.sender} · {m.status}
-                </p>
-                {m.sender !== "customer" && m.status === "queued" && (
-                  <p className="mt-0.5 text-[11px] text-gauge-amber">draft — awaiting approval</p>
-                )}
-                {m.sender !== "customer" && m.status === "failed" && (
-                  <p className="mt-0.5 text-[11px] text-gauge-red">failed</p>
-                )}
-              </div>
+              ))}
             </div>
-          ))}
+          )}
+
+          <Card>
+            <CardHeader title="Details" />
+            <dl className="px-5 pb-4 sm:px-6">
+              {details.map((fact, i) => (
+                <div key={fact.label} className={"flex items-baseline justify-between gap-4 py-2.5 " + (i > 0 ? "border-t border-dashed border-line" : "")}>
+                  <dt className="shrink-0 text-xs text-muted">{fact.label}</dt>
+                  <dd className="min-w-0 truncate text-right text-sm font-medium text-ink">{fact.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </Card>
+        </div>
+
+        {/* Thread */}
+        <div className="lg:col-span-2 lg:col-start-1 lg:row-start-1">
+          <Card>
+            <CardHeader title="Conversation" />
+            <div className="space-y-2 px-5 pb-5 sm:px-6">
+              {!messages?.length ? (
+                <p className="py-6 text-center text-sm text-muted">No messages yet.</p>
+              ) : (
+                messages.map((m) => {
+                  const day = formatDayLabel(m.created_at);
+                  const showDivider = day !== previousDay;
+                  previousDay = day;
+                  const fromCustomer = m.sender === "customer";
+                  const senderLabel = fromCustomer ? customerLabel : (SENDER_LABELS[m.sender] ?? humanizeCode(m.sender));
+                  return (
+                    <div key={m.id}>
+                      {showDivider && (
+                        <p className="py-2 text-center text-[11px] font-medium uppercase tracking-wide text-faint">{day}</p>
+                      )}
+                      <div className={fromCustomer ? "text-left" : "text-right"}>
+                        <div
+                          className={
+                            "inline-block max-w-[85%] rounded-2xl px-3.5 py-2.5 text-left text-sm text-ink sm:max-w-[75%] " +
+                            (fromCustomer ? "border border-line bg-paper" : "bg-accent-blue-soft")
+                          }
+                        >
+                          <p>{m.body}</p>
+                          <p className="mt-1 text-[11px] tabular-nums text-muted">
+                            {senderLabel} · {formatTimeOfDay(m.created_at)}
+                          </p>
+                          {!fromCustomer && m.status === "queued" && (
+                            <p className="mt-0.5 text-[11px] font-medium text-gauge-amber">Draft — awaiting your approval</p>
+                          )}
+                          {!fromCustomer && m.status === "failed" && (
+                            <p className="mt-0.5 text-[11px] font-medium text-gauge-red">Failed to send</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </Card>
         </div>
       </div>
     </main>

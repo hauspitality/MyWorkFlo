@@ -16,7 +16,7 @@ export default async function OnboardingDonePage() {
           </svg>
         </div>
         <h1 className="mb-2 text-xl font-semibold text-ink">
-          {business?.name ?? "You"}&rsquo;re set up
+          {business?.name ? `${business.name} is set up` : "You’re set up"}
         </h1>
         <p className="mb-8 text-sm text-muted">
           A missed call will now get a text back automatically. Your calendar connection and plan — like

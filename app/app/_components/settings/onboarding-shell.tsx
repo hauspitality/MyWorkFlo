@@ -1,14 +1,15 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 const STEPS = [
-  "Business",
-  "Hours",
-  "Service area",
-  "Appointment types",
-  "Emergency keywords",
-  "Control mode",
-  "Calendar",
-  "Plan",
+  { label: "Business", href: "/onboarding/business" },
+  { label: "Hours", href: "/onboarding/hours" },
+  { label: "Service area", href: "/onboarding/service-area" },
+  { label: "Appointment types", href: "/onboarding/appointment-types" },
+  { label: "Emergency keywords", href: "/onboarding/emergency-keywords" },
+  { label: "Control mode", href: "/onboarding/control-mode" },
+  { label: "Calendar", href: "/onboarding/calendar" },
+  { label: "Plan", href: "/onboarding/plan" },
 ];
 
 export function OnboardingShell({
@@ -22,6 +23,10 @@ export function OnboardingShell({
   subtitle?: string;
   children: ReactNode;
 }) {
+  // The business step redirects forward once a business exists, so "Back"
+  // only appears where there's a revisitable previous step.
+  const backHref = step >= 2 ? STEPS[step - 1].href : null;
+
   return (
     <main className="flex min-h-full flex-1 items-start justify-center px-6 py-12">
       <div className="w-full max-w-md">
@@ -47,12 +52,19 @@ export function OnboardingShell({
 
         <div className="mb-4 flex gap-1.5">
           {STEPS.map((s, i) => (
-            <div key={s} className={"h-1 flex-1 rounded-full " + (i <= step ? "bg-accent-blue" : "bg-line")} />
+            <div key={s.label} className={"h-1 flex-1 rounded-full " + (i <= step ? "bg-accent-blue" : "bg-line")} />
           ))}
         </div>
-        <p className="mb-1 text-sm text-muted">
-          Step {step + 1} of {STEPS.length}
-        </p>
+        <div className="mb-1 flex items-center justify-between gap-3">
+          <p className="text-sm text-muted">
+            Step {step + 1} of {STEPS.length}
+          </p>
+          {backHref && (
+            <Link href={backHref} className="text-[13px] font-medium text-muted transition-colors hover:text-ink">
+              ← Back
+            </Link>
+          )}
+        </div>
         <h1 className="mb-1 text-xl font-semibold text-ink">{title}</h1>
         {subtitle && <p className="mb-6 text-sm text-muted">{subtitle}</p>}
         {!subtitle && <div className="mb-4" />}

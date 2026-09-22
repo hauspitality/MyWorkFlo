@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/app/_components/ui";
 import type { ServiceArea } from "@/lib/supabase/types";
 
 export function ServiceAreaEditor({
@@ -14,6 +15,7 @@ export function ServiceAreaEditor({
 }) {
   const [zipsText, setZipsText] = useState((initial.zips ?? []).join(", "));
   const [saving, setSaving] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit() {
@@ -26,6 +28,8 @@ export function ServiceAreaEditor({
     setError(null);
     try {
       await onSave({ type: "zip_list", zips });
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save service area");
     } finally {
@@ -36,23 +40,22 @@ export function ServiceAreaEditor({
   return (
     <div className="space-y-3">
       <label className="block text-sm">
-        <span className="mb-1 block text-muted">Zip codes you serve (comma or space separated)</span>
+        <span className="mb-1.5 block font-medium text-ink-soft">Zip codes you serve (comma or space separated)</span>
         <textarea
           value={zipsText}
           onChange={(e) => setZipsText(e.target.value)}
           rows={3}
           placeholder="10001, 10002, 10003"
-          className="w-full rounded-md border border-line bg-paper px-3 py-2 text-sm"
+          className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm tabular-nums outline-none transition-colors placeholder:text-faint focus:border-accent-blue/50 focus:bg-card"
         />
       </label>
       {error && <p className="text-sm text-gauge-red">{error}</p>}
-      <button
-        onClick={handleSubmit}
-        disabled={saving}
-        className="rounded-md bg-accent-blue px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-      >
-        {saving ? "Saving..." : submitLabel}
-      </button>
+      <div className="flex items-center gap-3">
+        <Button onClick={handleSubmit} disabled={saving}>
+          {saving ? "Saving…" : submitLabel}
+        </Button>
+        {savedFlash && <span className="text-xs font-medium text-gauge-green">Saved ✓</span>}
+      </div>
     </div>
   );
 }
