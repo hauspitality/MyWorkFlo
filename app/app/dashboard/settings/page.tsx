@@ -47,8 +47,8 @@ export default async function SettingsPage() {
   });
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-semibold text-ink">Settings</h1>
+    <main className="mx-auto max-w-5xl px-4 py-8 lg:px-8">
+      <h1 className="text-2xl font-semibold text-ink lg:text-3xl">Settings</h1>
       <p className="mt-1 text-sm text-muted">
         {business?.name} &middot; {business?.timezone}
       </p>
@@ -62,6 +62,7 @@ export default async function SettingsPage() {
         staff={staffList ?? []}
         calendarConnected={Boolean(calendarConnection)}
         subscriptionStatus={business?.subscription_status ?? null}
+        userEmail={user.email ?? ""}
       />
     </main>
   );

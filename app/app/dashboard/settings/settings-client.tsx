@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/browser";
 import { ControlModeSelector } from "@/app/_components/settings/control-mode-selector";
+import { UserAvatar } from "@/app/_components/shell/dashboard-shell";
 import { HoursEditor } from "@/app/_components/settings/hours-editor";
 import { ServiceAreaEditor } from "@/app/_components/settings/service-area-editor";
 import { AppointmentTypesEditor, type AppointmentTypeRow } from "@/app/_components/settings/appointment-types-editor";
@@ -42,6 +45,7 @@ export function SettingsClient({
   staff,
   calendarConnected,
   subscriptionStatus,
+  userEmail,
 }: {
   controlMode: ControlMode;
   businessHours: BusinessHours;
@@ -51,7 +55,18 @@ export function SettingsClient({
   staff: Pick<Staff, "id" | "name" | "phone_number" | "role" | "is_active">[];
   calendarConnected: boolean;
   subscriptionStatus: string | null;
+  userEmail: string;
 }) {
+  const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+  }
+
   const [flashKey, setFlashKey] = useState<string | null>(null);
 
   function flash(key: string) {
@@ -73,72 +88,90 @@ export function SettingsClient({
         />
       </div>
 
-      <div className="space-y-3">
-        <Section title="Business hours">
-          <SavedFlash show={flashKey === "hours"} />
-          <HoursEditor
-            initial={businessHours}
-            onSave={async (hours) => {
-              await updateBusinessHours(hours);
-              flash("hours");
-            }}
-          />
-        </Section>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-3 lg:col-span-2">
+          <Section title="Business hours">
+            <SavedFlash show={flashKey === "hours"} />
+            <HoursEditor
+              initial={businessHours}
+              onSave={async (hours) => {
+                await updateBusinessHours(hours);
+                flash("hours");
+              }}
+            />
+          </Section>
 
-        <Section title="Service area">
-          <SavedFlash show={flashKey === "service_area"} />
-          <ServiceAreaEditor
-            initial={serviceArea}
-            onSave={async (area) => {
-              await updateServiceArea(area);
-              flash("service_area");
-            }}
-          />
-        </Section>
+          <Section title="Service area">
+            <SavedFlash show={flashKey === "service_area"} />
+            <ServiceAreaEditor
+              initial={serviceArea}
+              onSave={async (area) => {
+                await updateServiceArea(area);
+                flash("service_area");
+              }}
+            />
+          </Section>
 
-        <Section title="Appointment types & pricing">
-          <AppointmentTypesEditor initial={appointmentTypes} onSave={upsertAppointmentType} onDelete={deleteAppointmentType} />
-        </Section>
+          <Section title="Appointment types & pricing">
+            <AppointmentTypesEditor initial={appointmentTypes} onSave={upsertAppointmentType} onDelete={deleteAppointmentType} />
+          </Section>
 
-        <Section title="Emergency keywords">
-          <SavedFlash show={flashKey === "emergency_keywords"} />
-          <EmergencyKeywordsEditor
-            initial={emergencyKeywords}
-            onSave={async (keywords) => {
-              await updateEmergencyKeywords(keywords);
-              flash("emergency_keywords");
-            }}
-          />
-        </Section>
+          <Section title="Emergency keywords">
+            <SavedFlash show={flashKey === "emergency_keywords"} />
+            <EmergencyKeywordsEditor
+              initial={emergencyKeywords}
+              onSave={async (keywords) => {
+                await updateEmergencyKeywords(keywords);
+                flash("emergency_keywords");
+              }}
+            />
+          </Section>
+        </div>
 
-        <Section title="Staff">
-          <div className="space-y-2">
-            {staff.map((s) => (
-              <div key={s.id} className="flex items-center justify-between rounded-md border border-line bg-paper px-3 py-2 text-sm">
-                <span className="text-ink">{s.name}</span>
-                <span className="text-muted">{s.phone_number}</span>
-                <span className="text-xs uppercase text-muted">{s.role}</span>
-              </div>
-            ))}
-            <p className="text-xs text-muted">Inviting additional staff is coming soon.</p>
-          </div>
-        </Section>
+        <div className="space-y-3">
+          <Section title="Staff">
+            <div className="space-y-2">
+              {staff.map((s) => (
+                <div key={s.id} className="flex items-center justify-between rounded-md border border-line bg-paper px-3 py-2 text-sm">
+                  <span className="text-ink">{s.name}</span>
+                  <span className="text-muted">{s.phone_number}</span>
+                  <span className="text-xs uppercase text-muted">{s.role}</span>
+                </div>
+              ))}
+              <p className="text-xs text-muted">Inviting additional staff is coming soon.</p>
+            </div>
+          </Section>
 
-        <Section title="Calendar connection">
-          <p className="text-sm text-ink-soft">
-            {calendarConnected
-              ? "Google Calendar is connected."
-              : "Not connected yet — Autopilot bookings fall back to staff approval until this is set up. Coming soon."}
-          </p>
-        </Section>
+          <Section title="Calendar connection">
+            <p className="text-sm text-ink-soft">
+              {calendarConnected
+                ? "Google Calendar is connected."
+                : "Not connected yet — Autopilot bookings fall back to staff approval until this is set up. Coming soon."}
+            </p>
+          </Section>
 
-        <Section title="Billing & plan">
-          <p className="text-sm text-ink-soft">
-            {subscriptionStatus
-              ? `Subscription status: ${subscriptionStatus}.`
-              : "Self-serve billing isn't live yet — this is being set up manually for now."}
-          </p>
-        </Section>
+          <Section title="Billing & plan">
+            <p className="text-sm text-ink-soft">
+              {subscriptionStatus
+                ? `Subscription status: ${subscriptionStatus}.`
+                : "Self-serve billing isn't live yet — this is being set up manually for now."}
+            </p>
+          </Section>
+
+          <Section title="Account">
+            <div className="flex items-center gap-2.5">
+              <UserAvatar label={userEmail} className="h-8 w-8" />
+              <span className="truncate text-sm text-ink-soft">{userEmail}</span>
+            </div>
+            <button
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="mt-3 rounded-md border border-line px-3 py-1.5 text-sm font-medium text-ink-soft hover:bg-paper disabled:opacity-50"
+            >
+              {signingOut ? "Signing out..." : "Sign out"}
+            </button>
+          </Section>
+        </div>
       </div>
     </div>
   );
