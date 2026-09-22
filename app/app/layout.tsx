@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { RegisterServiceWorker } from "./_components/register-service-worker";
 import "./globals.css";
 
 const switzer = localFont({
@@ -16,6 +17,7 @@ const switzer = localFont({
 export const metadata: Metadata = {
   title: "MyWorkFlo",
   description: "The AI front desk for HVAC and home-service teams.",
+  appleWebApp: { title: "MyWorkFlo", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
@@ -27,7 +29,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${switzer.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-paper text-ink font-sans">{children}</body>
+      <body className="min-h-full flex flex-col bg-paper text-ink font-sans">
+        <RegisterServiceWorker />
+        {children}
+      </body>
     </html>
   );
 }

@@ -273,3 +273,18 @@ export interface Subscription {
   created_at: string;
   updated_at: string;
 }
+
+// Matches supabase/migrations/0002_push_subscriptions.sql. Named
+// PushSubscriptionRow (not PushSubscription) to avoid clashing with the
+// browser's built-in DOM PushSubscription type used client-side.
+export interface PushSubscriptionRow {
+  id: string;
+  business_id: string;
+  staff_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent: string | null;
+  created_at: string;
+  last_seen_at: string;
+}
