@@ -18,6 +18,7 @@ function LoginForm() {
   const next = searchParams.get("next") ?? "/dashboard";
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error" | "signing-in">("idle");
+  const [showEmailFallback, setShowEmailFallback] = useState(false);
 
   // Handles links that carry the session in the URL fragment (e.g. an
   // admin-generated link, or any implicit-flow edge case) rather than the
@@ -53,6 +54,19 @@ function LoginForm() {
     });
 
     setStatus(error ? "error" : "sent");
+  }
+
+  async function handleGoogleSignIn() {
+    setStatus("signing-in");
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
+    });
+    // On success the browser navigates away to Google; only errors land here.
+    if (error) setStatus("error");
   }
 
   return (
@@ -92,38 +106,71 @@ function LoginForm() {
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-4">
             <div>
               <h1 className="mb-1 text-xl font-semibold">Sign in</h1>
-              <p className="text-sm text-muted">We&rsquo;ll email you a link, no password to remember.</p>
+              <p className="text-sm text-muted">One tap with Google — no password to remember.</p>
             </div>
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-ink-soft">Email</span>
-              <input
-                type="email"
-                required
-                autoFocus
-                inputMode="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@yourcompany.com"
-                className="h-12 w-full rounded-xl border border-line bg-paper px-4 text-base outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
-              />
-            </label>
+
             <button
-              type="submit"
-              disabled={status === "sending"}
-              className="flex h-12 w-full items-center justify-center rounded-full bg-accent-blue font-semibold text-white transition-colors hover:bg-accent-blue-deep disabled:opacity-60"
+              onClick={handleGoogleSignIn}
+              className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-line bg-card font-semibold text-ink transition-colors hover:border-line-strong hover:bg-paper"
             >
-              {status === "sending" ? "Sending…" : "Send me a login link"}
+              <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+                <path
+                  fill="#4285F4"
+                  d="M23.5 12.27c0-.85-.08-1.66-.22-2.45H12v4.64h6.45a5.52 5.52 0 0 1-2.39 3.62v3h3.86c2.26-2.09 3.58-5.16 3.58-8.81Z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.86-3c-1.07.72-2.45 1.15-4.08 1.15-3.13 0-5.79-2.11-6.74-4.96H1.28v3.09A12 12 0 0 0 12 24Z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.26 14.28A7.2 7.2 0 0 1 4.88 12c0-.79.14-1.56.38-2.28V6.63H1.28a12 12 0 0 0 0 10.74l3.98-3.09Z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 4.76c1.76 0 3.34.6 4.59 1.79l3.42-3.42A11.96 11.96 0 0 0 12 0 12 12 0 0 0 1.28 6.63l3.98 3.09C6.21 6.87 8.87 4.76 12 4.76Z"
+                />
+              </svg>
+              Continue with Google
             </button>
+
             {status === "error" && (
-              <p className="text-sm text-gauge-red">
-                Something went wrong sending that link. Try again in a moment.
-              </p>
+              <p className="text-sm text-gauge-red">Something went wrong. Try again in a moment.</p>
             )}
-          </form>
+
+            {!showEmailFallback ? (
+              <button onClick={() => setShowEmailFallback(true)} className="block w-full text-center text-sm text-muted hover:text-ink">
+                Or get a sign-in link by email
+              </button>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-3 border-t border-line pt-4">
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-ink-soft">Email</span>
+                  <input
+                    type="email"
+                    required
+                    autoFocus
+                    inputMode="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@yourcompany.com"
+                    className="h-12 w-full rounded-xl border border-line bg-paper px-4 text-base outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={status === "sending"}
+                  className="flex h-12 w-full items-center justify-center rounded-full bg-accent-blue font-semibold text-white transition-colors hover:bg-accent-blue-deep disabled:opacity-60"
+                >
+                  {status === "sending" ? "Sending…" : "Send me a login link"}
+                </button>
+              </form>
+            )}
+          </div>
         )}
       </div>
     </main>
