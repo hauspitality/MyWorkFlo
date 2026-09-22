@@ -6,8 +6,8 @@ import { decideAction, type ActionPlan } from "@/lib/ai/decide-action";
 import { checkAutopilotEligibility } from "@/lib/ai/autopilotEligibility";
 import { checkAvailability } from "@/lib/ai/tools";
 import { createCalendarEventIfConnected } from "@/lib/calendar/google";
-import { getEmergencyAcknowledgment } from "@/lib/hvac/emergencyScripts";
 import { detectEmergencySignal } from "@/lib/hvac/emergencySignals";
+import { bookingHoldFallback, emergencyAcknowledgment, toCustomerLang } from "@/lib/messaging/customer-strings";
 import { getIssueType } from "@/lib/hvac/taxonomy";
 import { notifyBusinessStaff } from "./notify-staff";
 import type { AiDecisionMetadata, ControlMode, LeadStatus } from "@/lib/supabase/types";
@@ -59,6 +59,14 @@ export interface ProcessInboundParams {
    * for deterministic Layer-1 emergencies, which must never wait.
    */
   debounceMs?: number;
+  /**
+   * Simulated traffic (dev simulator / test drives): conversations are
+   * created with is_simulation=true and only simulated conversations are
+   * reused, staff notifications become simulated_staff_notification audit
+   * events, calendar events are skipped, and approval payloads carry
+   * simulated: true so downstream flows can stay side-effect free.
+   */
+  simulation?: boolean;
 }
 
 export type ExecutedPlan =
@@ -92,6 +100,7 @@ const UNIQUE_VIOLATION = "23505";
 
 export async function processInboundMessage(params: ProcessInboundParams): Promise<ProcessInboundResult> {
   const { businessId, fromPhone, body, deliver, inboundSid } = params;
+  const simulation = params.simulation === true;
   const db = createServiceClient();
 
   const { data: business } = await db
@@ -101,7 +110,30 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
     .single();
   if (!business) throw new Error(`Business not found: ${businessId}`);
 
+  // Loaded once up front: emergency_keywords feeds the debounce bypass and
+  // approval_expiry_minutes stamps expires_at on any approval_queue insert.
+  const { data: serviceSettings } = await db
+    .from("service_settings")
+    .select("emergency_keywords, approval_expiry_minutes")
+    .eq("business_id", businessId)
+    .maybeSingle();
+  const approvalExpiresAt = () =>
+    new Date(Date.now() + (serviceSettings?.approval_expiry_minutes ?? 15) * 60_000).toISOString();
+
   const conversation = await resolveConversation(params);
+
+  // Opt-out compliance: a lead who texted STOP is closed_lost (see the
+  // Twilio SMS webhook). The webhook blocks the pipeline for the STOP text
+  // itself; this guard covers every later path that would transmit to them.
+  const { data: lead } = await db
+    .from("leads")
+    .select("status, language")
+    .eq("id", conversation.lead_id)
+    .maybeSingle();
+  // let, not const: transmit() re-checks right before each send and flips
+  // this when a STOP landed mid-turn (e.g. during the debounce wait).
+  let leadOptedOut = lead?.status === "closed_lost";
+  const customerLang = toCustomerLang(conversation.detected_language ?? lead?.language);
 
   // Inbound is persisted BEFORE the AI turn: with inboundSid set, a Twilio
   // retry of the same MessageSid hits the unique index and stops here
@@ -164,7 +196,22 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
 
   /** Deliver if a transport was provided; report how the message row should be marked. */
   async function transmit(text: string): Promise<{ status: "sent" | "failed"; sid: string | null }> {
+    // Never deliver to an opted-out lead — the message row persists as
+    // failed (with an audit trail) so the dashboard shows what happened.
+    if (leadOptedOut) {
+      await insertAudit("outbound_delivery_skipped", "conversation", conversation.id, { reason: "customer_opted_out" });
+      return { status: "failed", sid: null };
+    }
     if (!deliver) return { status: "sent", sid: null };
+    // The pre-check above read the lead before the AI turn (and before the
+    // debounce wait) — a STOP can land in that window. Re-read right before
+    // the actual send so an opt-out is never raced past.
+    const { data: freshLead } = await db.from("leads").select("status").eq("id", conversation.lead_id).maybeSingle();
+    if (freshLead?.status === "closed_lost") {
+      leadOptedOut = true;
+      await insertAudit("outbound_delivery_skipped", "conversation", conversation.id, { reason: "customer_opted_out" });
+      return { status: "failed", sid: null };
+    }
     try {
       const sid = await deliver(text);
       return { status: "sent", sid };
@@ -174,6 +221,11 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
   }
 
   function notifyStaff(smsText: string, push: { title: string; body: string; url?: string }) {
+    // Simulated traffic must never page real staff — record what WOULD have
+    // been sent instead, so the simulator can still show it.
+    if (simulation) {
+      return insertAudit("simulated_staff_notification", "conversation", conversation.id, { sms_text: smsText, push });
+    }
     return notifyBusinessStaff({ businessId, businessTwilioNumber: business!.twilio_phone_number, smsText, push });
   }
 
@@ -183,7 +235,7 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
   // acknowledgment, never another model turn — a human is already on it,
   // and "the AI keeps trying to help" is exactly the failure mode to avoid.
   if (conversation.status === "escalated_emergency") {
-    const ackText = getEmergencyAcknowledgment();
+    const ackText = emergencyAcknowledgment(customerLang);
     const delivery = await transmit(ackText);
     await insertOutbound(ackText, delivery.status, null, delivery.sid);
     await db
@@ -205,12 +257,7 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
   // Deterministic Layer-1 emergencies never wait — the fixed safety script
   // must go out immediately.
   if (params.debounceMs && params.debounceMs > 0) {
-    const { data: settings } = await db
-      .from("service_settings")
-      .select("emergency_keywords")
-      .eq("business_id", businessId)
-      .maybeSingle();
-    const isEmergency = detectEmergencySignal(body, settings?.emergency_keywords ?? []);
+    const isEmergency = detectEmergencySignal(body, serviceSettings?.emergency_keywords ?? []);
     if (!isEmergency) {
       await new Promise((resolve) => setTimeout(resolve, params.debounceMs));
       const { data: newest } = await db
@@ -284,9 +331,13 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
       conversationStatus = "escalated_emergency";
       await insertAudit("emergency_escalated", "conversation", conversation.id, { category: decision.emergency_category });
       // The locked script just told the customer "we've alerted the team" —
-      // make that true. Failures are audited inside notifyStaff.
+      // make that true. Failures are audited inside notifyStaff. When the
+      // customer opted out, the script could NOT be texted (transmit skipped
+      // and audited it) — the staff alert must say so, never claim it went.
       await notifyStaff(
-        `EMERGENCY (${decision.emergency_category ?? "unspecified"}) reported by ${fromPhone}. The safety script was sent. Call them now: ${fromPhone}`,
+        leadOptedOut
+          ? `EMERGENCY (${decision.emergency_category ?? "unspecified"}) reported by ${fromPhone}. We could NOT text them the safety script (they opted out of texts) — CALL them now: ${fromPhone}`
+          : `EMERGENCY (${decision.emergency_category ?? "unspecified"}) reported by ${fromPhone}. The safety script was sent. Call them now: ${fromPhone}`,
         {
           title: "EMERGENCY escalation",
           body: `${decision.emergency_category ?? "Safety emergency"} — ${fromPhone}`,
@@ -303,7 +354,8 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
           business_id: businessId,
           conversation_id: conversation.id,
           type: "outbound_message",
-          payload: { draft_text: plan.draftText, reason: plan.reason, message_id: msg?.id ?? null },
+          payload: { draft_text: plan.draftText, reason: plan.reason, message_id: msg?.id ?? null, ...(simulation ? { simulated: true } : {}) },
+          expires_at: approvalExpiresAt(),
         })
         .select("id, magic_link_token")
         .single();
@@ -328,7 +380,8 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
           business_id: businessId,
           conversation_id: conversation.id,
           type: "booking",
-          payload: { appointment_type_id: plan.appointmentTypeId, start: plan.start },
+          payload: { appointment_type_id: plan.appointmentTypeId, start: plan.start, ...(simulation ? { simulated: true } : {}) },
+          expires_at: approvalExpiresAt(),
         })
         .select("id, magic_link_token")
         .single();
@@ -376,7 +429,7 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
           appointment_type_id: plan.appointmentTypeId,
           start: plan.start,
         });
-        const holdingText = "Let me double-check that time with the team and confirm right back.";
+        const holdingText = bookingHoldFallback(toCustomerLang(decision.language ?? conversation.detected_language ?? lead?.language));
         const delivery = await transmit(holdingText);
         await insertOutbound(holdingText, delivery.status, decision, delivery.sid);
         const { data: approval } = await db
@@ -385,7 +438,8 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
             business_id: businessId,
             conversation_id: conversation.id,
             type: "booking",
-            payload: { appointment_type_id: plan.appointmentTypeId, start: plan.start },
+            payload: { appointment_type_id: plan.appointmentTypeId, start: plan.start, ...(simulation ? { simulated: true } : {}) },
+            expires_at: approvalExpiresAt(),
           })
           .select("id, magic_link_token")
           .single();
@@ -411,7 +465,8 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
       // already committed above.
       const collected = { ...(conversation.collected_fields ?? {}), ...(decision.collected_fields ?? {}) };
       const contact = collected.name ?? collected.customer_name ?? fromPhone;
-      const eventId = await createCalendarEventIfConnected({
+      // Simulated bookings never touch the business's real calendar.
+      const eventId = simulation ? null : await createCalendarEventIfConnected({
         businessId,
         summary: `${appointmentType?.name ?? "Service visit"} — ${contact}`,
         description: [
@@ -490,8 +545,10 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
     escalate_emergency: "escalated",
     escalate_priority: "escalated",
   };
+  // Never resurrect an opted-out lead: closed_lost is sticky once the
+  // customer texts STOP.
   const leadStatus = LEAD_STATUS_BY_PLAN[executedPlan.type];
-  if (leadStatus) {
+  if (leadStatus && !leadOptedOut) {
     await db.from("leads").update({ status: leadStatus }).eq("id", conversation.lead_id);
   }
 
@@ -554,11 +611,15 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
 
     // Reuse the latest still-open thread for this phone; closed and booked
     // conversations stay closed — a new text after either starts fresh.
+    // Simulated and real traffic never share a thread: simulation reuses
+    // only is_simulation conversations, and real traffic never reuses a
+    // simulated one.
     const { data: openConversation } = await db
       .from("conversations")
       .select(CONVERSATION_COLUMNS)
       .eq("business_id", p.businessId)
       .eq("lead_id", leadId)
+      .eq("is_simulation", simulation)
       .not("status", "in", "(closed,booked)")
       .order("last_message_at", { ascending: false })
       .limit(1)
@@ -573,6 +634,7 @@ export async function processInboundMessage(params: ProcessInboundParams): Promi
         lead_id: leadId,
         control_mode_snapshot: p.controlModeOverride ?? (business?.control_mode as ControlMode) ?? "draft",
         detected_language: p.language ?? null,
+        is_simulation: simulation,
       })
       .select(CONVERSATION_COLUMNS)
       .single();

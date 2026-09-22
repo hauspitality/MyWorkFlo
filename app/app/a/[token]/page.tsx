@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/service";
+import { approvalSummary } from "@/app/_components/conversation-status";
 import { TokenButtons } from "./token-buttons";
 
 // Approval state must always be read fresh — a stale render here could show
@@ -45,12 +46,18 @@ export default async function MagicLinkApprovalPage({ params }: { params: Promis
   }
 
   if (isExpired(approval.status, approval.expires_at)) {
+    const { data: settings } = await db
+      .from("service_settings")
+      .select("approval_expiry_minutes")
+      .eq("business_id", approval.business_id)
+      .maybeSingle();
+    const expiryMinutes: number = settings?.approval_expiry_minutes ?? 15;
     return (
       <Shell>
         <h1 className="mb-2 text-xl font-semibold text-ink">This request expired</h1>
         <p className="text-sm text-ink-soft">
-          Approval requests expire 15 minutes after they&rsquo;re sent. If it&rsquo;s still relevant, pick the
-          conversation back up from your dashboard.
+          Approval requests expire {expiryMinutes} minutes after they&rsquo;re sent. If it&rsquo;s still relevant, pick
+          the conversation back up from your dashboard.
         </p>
       </Shell>
     );
@@ -66,7 +73,12 @@ export default async function MagicLinkApprovalPage({ params }: { params: Promis
           {TYPE_LABEL[approval.type] ?? approval.type}
         </span>
       </div>
+      {/* Read-only by design: this unauthenticated link approves or declines
+          the ORIGINAL draft only — editing the wording requires the dashboard. */}
       <p className="rounded-xl bg-paper px-3.5 py-2.5 text-sm text-ink">{summary}</p>
+      {approval.type === "outbound_message" && (
+        <p className="mt-2 text-xs text-muted">Need to change the wording? Open the dashboard.</p>
+      )}
       <div className="mt-5">
         <TokenButtons token={token} approvalType={approval.type} />
       </div>
@@ -90,27 +102,13 @@ async function buildSummary(type: string, payload: Record<string, unknown>, busi
       db.from("appointment_types").select("name").eq("id", appointmentTypeId).eq("business_id", businessId).maybeSingle(),
       db.from("businesses").select("timezone").eq("id", businessId).maybeSingle(),
     ]);
-    return `${apptType?.name ?? "Service visit"} — ${formatWhen(startIso, business?.timezone)}`;
+    // Same "{Appointment type} — {when}" line the dashboard shows.
+    return approvalSummary(payload, { appointmentTypeName: apptType?.name, timezone: business?.timezone });
   }
 
   if (typeof payload.draft_text === "string") return payload.draft_text;
   if (typeof payload.reason === "string") return payload.reason;
   return "See your dashboard for details.";
-}
-
-function formatWhen(startIso: string, timezone: string | null | undefined): string {
-  const options: Intl.DateTimeFormatOptions = {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  };
-  try {
-    return new Date(startIso).toLocaleString("en-US", { ...options, timeZone: timezone ?? "America/New_York" });
-  } catch {
-    return new Date(startIso).toLocaleString("en-US", { ...options, timeZone: "UTC" });
-  }
 }
 
 function Shell({ children }: { children: React.ReactNode }) {

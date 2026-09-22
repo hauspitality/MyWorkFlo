@@ -15,6 +15,9 @@ async function resolveByToken(token: string, approve: boolean): Promise<ResolveA
   const { data: approval } = await db.from("approval_queue").select("id").eq("magic_link_token", token).maybeSingle();
   if (!approval) return { ok: false, error: "This link isn't valid" };
 
+  // No overrideDraftText here, by design: token possession authorizes a
+  // yes/no on the ORIGINAL draft only. Sending arbitrary staff-edited text
+  // requires the authenticated dashboard path.
   return resolveApproval({
     approvalId: approval.id,
     approve,

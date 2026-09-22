@@ -16,8 +16,7 @@ export function TokenButtons({ token, approvalType }: TokenButtonsProps) {
   async function act(kind: "approve" | "decline") {
     setBusy(kind);
     setError(null);
-    const action = kind === "approve" ? approveByTokenAction : declineByTokenAction;
-    const result = await action(token);
+    const result = kind === "approve" ? await approveByTokenAction(token) : await declineByTokenAction(token);
     setBusy(null);
     if (result.ok) {
       setDone(kind === "approve" ? "approved" : "declined");

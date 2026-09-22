@@ -25,6 +25,13 @@ export type EmergencyCategory =
 export interface EmergencyMatch {
   category: EmergencyCategory;
   matchedPhrase: string;
+  /**
+   * Which language's phrase list the match came from — a first-contact
+   * emergency has no detected_language yet, and the safety script must go
+   * out in the customer's language. null for per-tenant CUSTOM keywords,
+   * whose language we can't know.
+   */
+  langHint: "en" | "es" | null;
 }
 
 /**
@@ -134,6 +141,35 @@ const FLOODING_ELECTRICAL_PHRASES = [
   "agua cerca del breaker",
 ];
 
+// Every Spanish entry across the platform phrase/word lists above — the
+// source of an EmergencyMatch's langHint. Keep in sync when growing a list.
+const SPANISH_ENTRIES = new Set([
+  "huele a gas",
+  "huele a azufre",
+  "olor a gas",
+  "hay una fuga de gas",
+  "detector de monoxido",
+  "alarma de monoxido",
+  "calefaccion",
+  "calentador",
+  "mareado",
+  "mareada",
+  "dolor de cabeza",
+  "me siento mal",
+  "nauseas",
+  "chispas",
+  "sale humo",
+  "esta humeando",
+  "huele a quemado",
+  "olor a quemado",
+  "se inundo cerca del panel",
+  "agua cerca del breaker",
+]);
+
+function langHintFor(phrase: string): "en" | "es" {
+  return SPANISH_ENTRIES.has(phrase) ? "es" : "en";
+}
+
 function includesPhrase(normalized: string, phrases: string[]): string | null {
   for (const phrase of phrases) {
     if (normalized.includes(normalize(phrase))) return phrase;
@@ -158,31 +194,37 @@ export function detectEmergencySignal(rawText: string, customKeywords: string[] 
   const text = normalize(rawText);
 
   const gasMatch = includesPhrase(text, GAS_SMELL_PHRASES);
-  if (gasMatch) return { category: "GAS_SMELL", matchedPhrase: gasMatch };
+  if (gasMatch) return { category: "GAS_SMELL", matchedPhrase: gasMatch, langHint: langHintFor(gasMatch) };
 
   const coDeviceMatch = includesPhrase(text, CO_DEVICE_PHRASES);
-  if (coDeviceMatch) return { category: "CARBON_MONOXIDE_CONCERN", matchedPhrase: coDeviceMatch };
+  if (coDeviceMatch) {
+    return { category: "CARBON_MONOXIDE_CONCERN", matchedPhrase: coDeviceMatch, langHint: langHintFor(coDeviceMatch) };
+  }
 
-  const hasApplianceWord = CO_APPLIANCE_WORDS.some((w) => text.includes(w));
-  const hasSymptomWord = CO_SYMPTOM_WORDS.some((w) => text.includes(normalize(w)));
-  if (hasApplianceWord && hasSymptomWord) {
-    return { category: "CARBON_MONOXIDE_CONCERN", matchedPhrase: "appliance+symptom co-occurrence" };
+  const applianceWord = CO_APPLIANCE_WORDS.find((w) => text.includes(w));
+  const symptomWord = CO_SYMPTOM_WORDS.find((w) => text.includes(normalize(w)));
+  if (applianceWord && symptomWord) {
+    return {
+      category: "CARBON_MONOXIDE_CONCERN",
+      matchedPhrase: "appliance+symptom co-occurrence",
+      langHint: langHintFor(applianceWord) === "es" || langHintFor(symptomWord) === "es" ? "es" : "en",
+    };
   }
 
   const sparkMatch = includesPhrase(text, SPARKING_PHRASES);
-  if (sparkMatch) return { category: "SPARKING_ELECTRICAL", matchedPhrase: sparkMatch };
+  if (sparkMatch) return { category: "SPARKING_ELECTRICAL", matchedPhrase: sparkMatch, langHint: langHintFor(sparkMatch) };
 
   const floodMatch = includesPhrase(text, FLOODING_ELECTRICAL_PHRASES);
-  if (floodMatch) return { category: "FLOODING_NEAR_ELECTRICAL", matchedPhrase: floodMatch };
+  if (floodMatch) return { category: "FLOODING_NEAR_ELECTRICAL", matchedPhrase: floodMatch, langHint: langHintFor(floodMatch) };
 
   const burnMatch = includesPhrase(text, BURNING_ELECTRICAL_PHRASES);
-  if (burnMatch) return { category: "BURNING_SMELL_ELECTRICAL", matchedPhrase: burnMatch };
+  if (burnMatch) return { category: "BURNING_SMELL_ELECTRICAL", matchedPhrase: burnMatch, langHint: langHintFor(burnMatch) };
 
   const customMatch = includesPhrase(
     text,
     customKeywords.filter((k) => k.trim().length > 0),
   );
-  if (customMatch) return { category: "CUSTOM_TRIGGER", matchedPhrase: customMatch };
+  if (customMatch) return { category: "CUSTOM_TRIGGER", matchedPhrase: customMatch, langHint: null };
 
   return null;
 }

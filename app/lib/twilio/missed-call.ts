@@ -1,5 +1,6 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
+import { missedCallOpener, toCustomerLang } from "@/lib/messaging/customer-strings";
 import { sendSms } from "@/lib/twilio/client";
 import type { CallStatus, ControlMode } from "@/lib/supabase/types";
 
@@ -28,7 +29,7 @@ export async function recordMissedCallAndTextBack(params: {
 
   const { data: existingLead } = await db
     .from("leads")
-    .select("id")
+    .select("id, language, status")
     .eq("business_id", businessId)
     .eq("source_phone_number", callerPhone)
     .maybeSingle();
@@ -44,6 +45,37 @@ export async function recordMissedCallAndTextBack(params: {
       .single();
     if (error || !newLead) throw new Error(error?.message ?? "Failed to create lead");
     leadId = newLead.id;
+  }
+
+  // Opt-out compliance: a lead who texted STOP must never get another text
+  // from us, including the missed-call opener. This runs BEFORE the
+  // text-back claim below so triggered_text_back is never stamped true for
+  // a text that was skipped — the call is still recorded, with an audit
+  // trail instead of a message.
+  if (existingLead?.status === "closed_lost") {
+    let skippedCallId: string | null = null;
+    if (callSid) {
+      await db.from("calls").upsert(
+        { business_id: businessId, lead_id: leadId, twilio_call_sid: callSid, status },
+        { onConflict: "twilio_call_sid", ignoreDuplicates: true },
+      );
+      const { data: callRow } = await db
+        .from("calls")
+        .select("id")
+        .eq("business_id", businessId)
+        .eq("twilio_call_sid", callSid)
+        .maybeSingle();
+      skippedCallId = callRow?.id ?? null;
+    }
+    await db.from("audit_log").insert({
+      business_id: businessId,
+      actor_type: "system",
+      event_type: "missed_call_text_back_skipped",
+      entity_type: "call",
+      entity_id: skippedCallId,
+      metadata: { caller_phone: callerPhone, reason: "customer_opted_out" },
+    });
+    return;
   }
 
   // Twilio retries callbacks on timeouts — never double-text a caller.
@@ -91,7 +123,9 @@ export async function recordMissedCallAndTextBack(params: {
 
   const conversationId = await resolveConversationId(businessId, leadId);
 
-  const openerText = `Sorry we missed your call — this is ${businessName}. Text back what's going on and we'll get you taken care of.`;
+  // Lead language is only known from a previous conversation; a brand-new
+  // caller gets English. Opt-out notice is baked into the opener string.
+  const openerText = missedCallOpener(businessName, existingLead?.language ? toCustomerLang(existingLead.language) : "en");
 
   let messageStatus: "sent" | "failed" = "sent";
   let messageSid: string | null = null;

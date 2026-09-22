@@ -2,6 +2,7 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendSms, isTwilioConfigured } from "@/lib/twilio/client";
 import { createCalendarEventIfConnected } from "@/lib/calendar/google";
+import { bookingConfirmation, toCustomerLang, type CustomerLang } from "@/lib/messaging/customer-strings";
 import type { ResponseChannel } from "@/lib/supabase/types";
 
 /**
@@ -19,6 +20,12 @@ export interface ResolveApprovalParams {
   respondedBy?: string | null;
   /** null = dashboard resolution — "dashboard" is not in the response_channel enum and the column is nullable. */
   responseChannel: ResponseChannel | null;
+  /**
+   * Staff-edited replacement for payload.draft_text on an outbound_message
+   * approve: when set, this is the text that gets sent (and persisted onto
+   * the message row body), audited as approval_approved_edited.
+   */
+  overrideDraftText?: string;
 }
 
 export interface ResolveApprovalResult {
@@ -29,6 +36,8 @@ export interface ResolveApprovalResult {
 export async function resolveApproval(params: ResolveApprovalParams): Promise<ResolveApprovalResult> {
   const { approvalId, approve, responseChannel } = params;
   const respondedBy = params.respondedBy ?? null;
+  // An all-whitespace edit is treated as "no edit" — never send an empty SMS.
+  const overrideDraftText = params.overrideDraftText?.trim() || undefined;
   const db = createServiceClient();
 
   const { data: approval } = await db
@@ -43,6 +52,45 @@ export async function resolveApproval(params: ResolveApprovalParams): Promise<Re
   const businessId: string = approval.business_id;
   const conversationId: string = approval.conversation_id;
   const payload = (approval.payload ?? {}) as Record<string, unknown>;
+
+  // Opt-out is sacred: closed_lost marks a customer who texted STOP. Both
+  // executable approve paths would text them (booking sends a confirmation),
+  // so instead of claiming as approved the request is auto-rejected.
+  if (approve && (approval.type === "outbound_message" || approval.type === "booking")) {
+    const { data: convo } = await db
+      .from("conversations")
+      .select("lead_id")
+      .eq("id", conversationId)
+      .eq("business_id", businessId)
+      .maybeSingle();
+    const { data: optOutLead } = convo
+      ? await db.from("leads").select("status").eq("id", convo.lead_id).eq("business_id", businessId).maybeSingle()
+      : { data: null };
+    if (optOutLead?.status === "closed_lost") {
+      const { data: rejected } = await db
+        .from("approval_queue")
+        .update({
+          status: "rejected",
+          responded_at: new Date().toISOString(),
+          responded_by: respondedBy,
+          response_channel: responseChannel,
+        })
+        .eq("id", approvalId)
+        .eq("status", "pending")
+        .select("id");
+      if (rejected?.length) {
+        const messageId = typeof payload.message_id === "string" ? payload.message_id : null;
+        if (approval.type === "outbound_message" && messageId) {
+          await db.from("messages").update({ status: "failed" }).eq("id", messageId).eq("business_id", businessId);
+        }
+        await audit("approval_auto_rejected_opt_out", "approval", approvalId, {
+          approval_type: approval.type,
+          response_channel: responseChannel,
+        });
+      }
+      return { ok: false, error: "This customer opted out of texts" };
+    }
+  }
 
   // Validate executable payloads BEFORE claiming: a claim consumed by a
   // payload that can never execute would permanently burn the approval.
@@ -121,10 +169,13 @@ export async function resolveApproval(params: ResolveApprovalParams): Promise<Re
   await audit("approval_approved", "approval", approvalId, { approval_type: approval.type, response_channel: responseChannel });
   return { ok: true };
 
-  async function loadLead(): Promise<{ id: string; name: string | null; source_phone_number: string } | null> {
+  async function loadLead(): Promise<{
+    lead: { id: string; name: string | null; source_phone_number: string };
+    lang: CustomerLang;
+  } | null> {
     const { data: convo } = await db
       .from("conversations")
-      .select("lead_id")
+      .select("lead_id, detected_language")
       .eq("id", conversationId)
       .eq("business_id", businessId)
       .maybeSingle();
@@ -135,16 +186,35 @@ export async function resolveApproval(params: ResolveApprovalParams): Promise<Re
       .eq("id", convo.lead_id)
       .eq("business_id", businessId)
       .maybeSingle();
-    return lead ?? null;
+    if (!lead) return null;
+    return { lead, lang: toCustomerLang(convo.detected_language) };
   }
 
   async function approveOutboundMessage(): Promise<ResolveApprovalResult> {
-    const draftText = typeof payload.draft_text === "string" ? payload.draft_text : null;
+    const originalDraft = typeof payload.draft_text === "string" ? payload.draft_text : null;
     const messageId = typeof payload.message_id === "string" ? payload.message_id : null;
+    // A staff edit replaces the draft as the text that actually gets sent.
+    const draftText = overrideDraftText ?? originalDraft;
     if (!draftText) return revertClaim("Approval payload is missing the draft message");
 
-    const lead = await loadLead();
-    if (!lead) return revertClaim("Could not find the customer for this conversation");
+    const loaded = await loadLead();
+    if (!loaded) return revertClaim("Could not find the customer for this conversation");
+    const { lead } = loaded;
+
+    // Persist an edit as canonical BEFORE attempting the send: if the send
+    // fails and the claim is reverted, the stored draft and the message row
+    // the thread shows already agree, so a later plain YES retry sends
+    // exactly the edited text.
+    if (overrideDraftText) {
+      await db
+        .from("approval_queue")
+        .update({ payload: { ...payload, draft_text: overrideDraftText } })
+        .eq("id", approvalId);
+      if (messageId) {
+        await db.from("messages").update({ body: overrideDraftText }).eq("id", messageId).eq("business_id", businessId);
+      }
+    }
+
     const { data: business } = await db.from("businesses").select("twilio_phone_number").eq("id", businessId).maybeSingle();
 
     // Without Twilio configured (dev), approving still marks the draft sent.
@@ -159,6 +229,8 @@ export async function resolveApproval(params: ResolveApprovalParams): Promise<Re
     }
 
     if (messageId) {
+      // Body was already made canonical above on an edited approve; only the
+      // delivery outcome lands here.
       await db
         .from("messages")
         .update({ status: sendError ? "failed" : "sent", twilio_message_sid: sid })
@@ -168,7 +240,16 @@ export async function resolveApproval(params: ResolveApprovalParams): Promise<Re
     await db.from("conversations").update({ status: "active" }).eq("id", conversationId).eq("business_id", businessId);
 
     if (sendError) return revertClaim(sendError);
-    await audit("approval_approved_message", "message", messageId, { approval_id: approvalId, response_channel: responseChannel });
+    if (overrideDraftText) {
+      await audit("approval_approved_edited", "message", messageId, {
+        approval_id: approvalId,
+        response_channel: responseChannel,
+        original_text: originalDraft,
+        edited_text: overrideDraftText,
+      });
+    } else {
+      await audit("approval_approved_message", "message", messageId, { approval_id: approvalId, response_channel: responseChannel });
+    }
     return { ok: true };
   }
 
@@ -177,8 +258,9 @@ export async function resolveApproval(params: ResolveApprovalParams): Promise<Re
     const startIso = typeof payload.start === "string" ? payload.start : null;
     if (!appointmentTypeId || !startIso) return revertClaim("Approval payload is missing booking details");
 
-    const lead = await loadLead();
-    if (!lead) return revertClaim("Could not find the customer for this conversation");
+    const loaded = await loadLead();
+    if (!loaded) return revertClaim("Could not find the customer for this conversation");
+    const { lead, lang } = loaded;
 
     const { data: business } = await db.from("businesses").select("timezone, twilio_phone_number").eq("id", businessId).maybeSingle();
     const { data: apptType } = await db
@@ -220,9 +302,11 @@ export async function resolveApproval(params: ResolveApprovalParams): Promise<Re
     }
 
     await db.from("conversations").update({ status: "booked" }).eq("id", conversationId).eq("business_id", businessId);
-    await db.from("leads").update({ status: "booked" }).eq("id", lead.id);
+    // Never overwrite an opt-out that landed between the up-front check and
+    // here — closed_lost is sticky.
+    await db.from("leads").update({ status: "booked" }).eq("id", lead.id).neq("status", "closed_lost");
 
-    const confirmationText = `You're all set — we'll be out ${formatInTimezone(start, business?.timezone)}. Reply here if anything changes.`;
+    const confirmationText = bookingConfirmation({ whenText: formatInTimezone(start, business?.timezone), lang });
     let sid: string | null = null;
     let messageStatus: "sent" | "failed" = "sent";
     if (isTwilioConfigured()) {

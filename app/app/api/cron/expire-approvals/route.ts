@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { approvalExpiryFallback, toCustomerLang } from "@/lib/messaging/customer-strings";
 import { isTwilioConfigured, sendSms } from "@/lib/twilio/client";
 import { notifyBusinessStaff } from "@/lib/messaging/notify-staff";
 
@@ -25,7 +26,7 @@ export async function GET(request: Request) {
 
   const { data: expired } = await db
     .from("approval_queue")
-    .select("id, business_id, conversation_id, type")
+    .select("id, business_id, conversation_id, type, payload")
     .eq("status", "pending")
     .lt("expires_at", nowIso)
     .limit(50);
@@ -43,53 +44,78 @@ export async function GET(request: Request) {
     if (!claimed?.length) continue;
     swept++;
 
+    // Simulated approvals (test drives) expire silently: the row flips and
+    // the audit trail records it, but no customer text, no staff nudge, and
+    // no lead/conversation escalation — a simulation must never page anyone.
+    const simulated = (approval.payload as Record<string, unknown> | null)?.simulated === true;
+
     const { data: conversation } = await db
       .from("conversations")
-      .select("id, lead_id, businesses(name, twilio_phone_number), leads(source_phone_number)")
+      .select("id, lead_id, detected_language, businesses(name, twilio_phone_number), leads(source_phone_number, language, status)")
       .eq("id", approval.conversation_id)
       .single();
     const businessRow = Array.isArray(conversation?.businesses) ? conversation?.businesses[0] : conversation?.businesses;
     const leadRow = Array.isArray(conversation?.leads) ? conversation?.leads[0] : conversation?.leads;
 
-    await db.from("conversations").update({ status: "escalated_priority" }).eq("id", approval.conversation_id);
-    await db.from("leads").update({ status: "escalated" }).eq("id", conversation?.lead_id ?? "");
+    // A lead who texted STOP after this approval was queued gets no fallback
+    // text (carrier violation) and stays closed_lost — the row still expires
+    // and the audit below still records it. Staff still get the nudge: the
+    // follow-up now has to be a phone call.
+    const leadOptedOut = leadRow?.status === "closed_lost";
 
-    // Customer fallback so they aren't left waiting on an approval that
-    // never came.
-    const fallbackText = "Thanks for waiting — someone from our team will text you back shortly.";
-    let fallbackStatus: "sent" | "failed" = "sent";
-    let fallbackSid: string | null = null;
-    if (isTwilioConfigured() && leadRow?.source_phone_number) {
-      try {
-        fallbackSid = await sendSms({
-          to: leadRow.source_phone_number,
-          from: businessRow?.twilio_phone_number ?? undefined,
-          body: fallbackText,
-        });
-      } catch {
-        fallbackStatus = "failed";
+    if (!simulated && !leadOptedOut) {
+      await db.from("conversations").update({ status: "escalated_priority" }).eq("id", approval.conversation_id);
+      // .neq guards the race where STOP lands between the read above and
+      // this write — closed_lost is never overwritten.
+      await db
+        .from("leads")
+        .update({ status: "escalated" })
+        .eq("id", conversation?.lead_id ?? "")
+        .neq("status", "closed_lost");
+
+      // Customer fallback so they aren't left waiting on an approval that
+      // never came — in the language the conversation was already in.
+      const fallbackText = approvalExpiryFallback(
+        toCustomerLang(conversation?.detected_language ?? leadRow?.language),
+      );
+      let fallbackStatus: "sent" | "failed" = "sent";
+      let fallbackSid: string | null = null;
+      if (isTwilioConfigured() && leadRow?.source_phone_number) {
+        try {
+          fallbackSid = await sendSms({
+            to: leadRow.source_phone_number,
+            from: businessRow?.twilio_phone_number ?? undefined,
+            body: fallbackText,
+          });
+        } catch {
+          fallbackStatus = "failed";
+        }
       }
+      await db.from("messages").insert({
+        conversation_id: approval.conversation_id,
+        business_id: approval.business_id,
+        direction: "outbound",
+        sender: "ai",
+        body: fallbackText,
+        status: fallbackStatus,
+        twilio_message_sid: fallbackSid,
+      });
     }
-    await db.from("messages").insert({
-      conversation_id: approval.conversation_id,
-      business_id: approval.business_id,
-      direction: "outbound",
-      sender: "ai",
-      body: fallbackText,
-      status: fallbackStatus,
-      twilio_message_sid: fallbackSid,
-    });
 
-    await notifyBusinessStaff({
-      businessId: approval.business_id,
-      businessTwilioNumber: businessRow?.twilio_phone_number,
-      smsText: `URGENT: an approval for ${leadRow?.source_phone_number ?? "a customer"} expired unanswered. They were told someone will follow up — that someone is you: ${process.env.NEXT_PUBLIC_APP_URL ?? ""}/dashboard/approvals`,
-      push: {
-        title: "Approval expired — customer waiting",
-        body: `${leadRow?.source_phone_number ?? "A customer"} needs a human follow-up now.`,
-        url: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/dashboard/leads/${approval.conversation_id}`,
-      },
-    });
+    if (!simulated) {
+      await notifyBusinessStaff({
+        businessId: approval.business_id,
+        businessTwilioNumber: businessRow?.twilio_phone_number,
+        smsText: leadOptedOut
+          ? `URGENT: an approval for ${leadRow?.source_phone_number ?? "a customer"} expired unanswered — and they opted out of texts, so call them: ${leadRow?.source_phone_number ?? "see dashboard"}. ${process.env.NEXT_PUBLIC_APP_URL ?? ""}/dashboard/approvals`
+          : `URGENT: an approval for ${leadRow?.source_phone_number ?? "a customer"} expired unanswered. They were told someone will follow up — that someone is you: ${process.env.NEXT_PUBLIC_APP_URL ?? ""}/dashboard/approvals`,
+        push: {
+          title: "Approval expired — customer waiting",
+          body: `${leadRow?.source_phone_number ?? "A customer"} needs a human follow-up now.`,
+          url: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/dashboard/leads/${approval.conversation_id}`,
+        },
+      });
+    }
 
     await db.from("audit_log").insert({
       business_id: approval.business_id,
@@ -97,7 +123,12 @@ export async function GET(request: Request) {
       event_type: "approval_auto_expired",
       entity_type: "approval",
       entity_id: approval.id,
-      metadata: { approval_type: approval.type, conversation_id: approval.conversation_id },
+      metadata: {
+        approval_type: approval.type,
+        conversation_id: approval.conversation_id,
+        ...(simulated ? { simulated: true } : {}),
+        ...(leadOptedOut ? { customer_text_skipped: "customer_opted_out" } : {}),
+      },
     });
   }
 

@@ -5,10 +5,12 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { processInboundMessage } from "@/lib/messaging/process-inbound";
 
 /**
- * Dev-only route: runs an inbound customer text through the exact
- * production pipeline (lib/messaging/process-inbound.ts — the same module
- * the real Twilio SMS webhook calls), minus actual SMS delivery. This is
- * how the pipeline gets validated without a phone number.
+ * Backs the "Test your AI" page (/dashboard/test): runs a pretend customer
+ * text through the exact production pipeline (lib/messaging/process-inbound.ts
+ * — the same module the real Twilio SMS webhook calls) in simulation mode:
+ * no SMS delivery, no staff notifications, no calendar bookings, and every
+ * conversation row is flagged is_simulation. A product feature, available
+ * in production.
  *
  * Auth: the caller must be a logged-in staff member of the target business
  * (checked via the session client, RLS-scoped). The pipeline itself writes
@@ -25,10 +27,6 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  if (process.env.NODE_ENV === "production" && process.env.ENABLE_DEV_SIMULATOR !== "true") {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
   const supabase = await createClient();
   const {
     data: { user },
@@ -66,6 +64,10 @@ export async function POST(request: Request) {
       controlModeOverride: input.controlMode,
       language: input.language,
       // No deliver callback: simulator persists outbound messages without sending.
+      // Simulation mode: conversation rows are flagged is_simulation, staff
+      // notifications and calendar bookings are skipped — a rehearsal never
+      // touches the real world.
+      simulation: true,
     });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Pipeline failed" }, { status: 500 });

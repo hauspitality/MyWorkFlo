@@ -1,6 +1,7 @@
 import "server-only";
 import { detectEmergencySignal, type EmergencyCategory } from "@/lib/hvac/emergencySignals";
 import { getEmergencyScript } from "@/lib/hvac/emergencyScripts";
+import { needsHumanFallback, toCustomerLang } from "@/lib/messaging/customer-strings";
 import { buildBusinessProfileBlock, buildConstitutionBlock } from "./systemPrompt";
 import { buildStateSummary, type ConversationContext } from "./context";
 import { ALL_TOOLS, executeInfoTool } from "./tools";
@@ -17,13 +18,26 @@ export interface TurnResult {
   toolCallsThisTurn: string[];
 }
 
+/**
+ * Cheap Spanish fallback for emergency turns when the phrase list gave no
+ * language hint and the conversation has no detected_language yet (a
+ * first-contact emergency): inverted punctuation, accented vowels, or a
+ * common standalone Spanish word. Word-bounded so English text ("smell",
+ * "help") can't false-positive on embedded "el".
+ */
+function spanishHeuristic(text: string): "es" | null {
+  return /[¿¡áéíóñ]|\b(el|la|los|las|mi|casa|huele)\b/i.test(text) ? "es" : null;
+}
+
 function buildEmergencyDecision(
   category: EmergencyCategory,
   businessName: string,
   language: string,
 ): AiDecisionMetadata {
   return {
-    reply_text: getEmergencyScript(category, businessName),
+    // The locked safety script goes out in the conversation's detected
+    // language (Spanish scripts are pre-translated, never model-generated).
+    reply_text: getEmergencyScript(category, businessName, toCustomerLang(language)),
     language,
     emergency_flag: true,
     emergency_category: category,
@@ -51,8 +65,14 @@ export async function runTurn(context: ConversationContext, inboundText: string)
   // below) exists for phrasing this list can't anticipate, not instead of it.
   const layer1Match = detectEmergencySignal(inboundText, context.serviceSettings.emergency_keywords);
   if (layer1Match) {
+    // A first-contact emergency has no detected_language yet — the matched
+    // phrase list itself says which language the customer wrote in, and the
+    // heuristic covers CUSTOM keywords (langHint null). decision.language
+    // flows back into conversations.detected_language via the pipeline.
+    const language =
+      layer1Match.langHint ?? spanishHeuristic(inboundText) ?? context.conversation.detected_language ?? "en";
     return {
-      decision: buildEmergencyDecision(layer1Match.category, context.business.name, fallbackLanguage),
+      decision: buildEmergencyDecision(layer1Match.category, context.business.name, language),
       shortCircuited: true,
       toolCallsThisTurn: [],
     };
@@ -78,8 +98,11 @@ export async function runTurn(context: ConversationContext, inboundText: string)
 
   if (outcome.kind === "emergency") {
     const input = outcome.emergencyInput as { category: EmergencyCategory; evidence_quote: string };
+    // Same first-contact problem as Layer 1: without a detected_language
+    // yet, fall back to the heuristic on the inbound text, never bare "en".
+    const language = context.conversation.detected_language ?? spanishHeuristic(inboundText) ?? "en";
     return {
-      decision: buildEmergencyDecision(input.category, context.business.name, fallbackLanguage),
+      decision: buildEmergencyDecision(input.category, context.business.name, language),
       shortCircuited: true,
       toolCallsThisTurn: outcome.toolCallsThisTurn,
     };
@@ -98,7 +121,7 @@ export async function runTurn(context: ConversationContext, inboundText: string)
   // rather than looping forever or guessing.
   return {
     decision: {
-      reply_text: "Let me get a real person on this for you — someone from our team will text you back shortly.",
+      reply_text: needsHumanFallback(toCustomerLang(fallbackLanguage)),
       language: fallbackLanguage,
       emergency_flag: false,
       intent: "unclear",

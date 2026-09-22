@@ -75,7 +75,8 @@ export async function GET(request: Request) {
     metadata: { business_id: business.id },
     // Mirrored onto the subscription so the webhook can resolve the tenant
     // without a customer-id lookup.
-    subscription_data: { metadata: { business_id: business.id } },
+    // 14-day free trial, card collected up front, converts automatically.
+    subscription_data: { trial_period_days: 14, metadata: { business_id: business.id } },
   });
 
   if (!session.url) {

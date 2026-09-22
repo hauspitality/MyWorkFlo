@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { normalizePhoneE164 } from "@/lib/twilio/client";
-import type { BusinessHours, ControlMode, ServiceArea } from "@/lib/supabase/types";
+import { staffSeatLimit } from "@/lib/billing/limits";
+import type { BusinessHours, ControlMode, PlanTier, ServiceArea } from "@/lib/supabase/types";
 
 /**
  * Shared by both the onboarding wizard and /dashboard/settings — both are
@@ -262,6 +263,138 @@ export async function updateControlMode(mode: ControlMode): Promise<void> {
   const businessId = await requireStaffBusinessId();
   const supabase = await createClient();
   const { error } = await supabase.from("businesses").update({ control_mode: mode }).eq("id", businessId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/settings");
+}
+
+/**
+ * How long a drafted reply waits for staff approval before the customer
+ * gets the honest "a person will follow up" fallback. Bounds match the
+ * approval-expiry UI (5 min – 4 hours); column added in migration 0006.
+ */
+export async function updateApprovalExpiryMinutes(minutes: number): Promise<void> {
+  const businessId = await requireStaffBusinessId();
+  if (!Number.isInteger(minutes) || minutes < 5 || minutes > 240) {
+    throw new Error("Choose a wait time between 5 and 240 minutes");
+  }
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("service_settings")
+    .update({ approval_expiry_minutes: minutes })
+    .eq("business_id", businessId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/settings");
+}
+
+/**
+ * Staff management is owner-only. RLS (staff_owner_write) already enforces
+ * this at the database level; the explicit check here exists to give
+ * non-owners a plain-English error instead of a silent no-op.
+ */
+async function requireOwner(): Promise<{ businessId: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: staff, error } = await supabase
+    .from("staff")
+    .select("business_id, role")
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  if (!staff) throw new Error("No business set up for this account yet");
+  if (staff.role !== "owner") throw new Error("Only the account owner can manage staff");
+  return { businessId: staff.business_id };
+}
+
+async function activeSeatUsage(businessId: string): Promise<{ count: number; limit: number }> {
+  const supabase = await createClient();
+  const [{ data: business }, { count }] = await Promise.all([
+    supabase.from("businesses").select("plan_tier").eq("id", businessId).single(),
+    supabase.from("staff").select("id", { count: "exact", head: true }).eq("business_id", businessId).eq("is_active", true),
+  ]);
+  return { count: count ?? 0, limit: staffSeatLimit((business?.plan_tier as PlanTier | undefined) ?? null) };
+}
+
+function seatLimitError(limit: number): Error {
+  return new Error(`Your plan includes ${limit} staff members. To add more, upgrade your plan under Billing & plan.`);
+}
+
+async function assertSeatAvailable(businessId: string): Promise<void> {
+  const { count, limit } = await activeSeatUsage(businessId);
+  if (count >= limit) throw seatLimitError(limit);
+}
+
+export async function addStaffMember(input: { name: string; phone: string; role: "dispatcher" | "tech" }): Promise<void> {
+  const { businessId } = await requireOwner();
+  const supabase = await createClient();
+
+  const name = input.name.trim();
+  if (!name) throw new Error("Enter a name");
+  if (input.role !== "dispatcher" && input.role !== "tech") throw new Error("Pick a role");
+
+  // Stored E.164 for the same reason as the owner's number: the SMS webhook
+  // matches staff by Twilio's E.164 From, and alerts/approvals text this number.
+  const phone = normalizePhoneE164(input.phone);
+  if (!phone) throw new Error("Enter a valid US phone number");
+
+  // Friendly early error for the common case; the real enforcement is the
+  // post-insert re-count below.
+  await assertSeatAvailable(businessId);
+
+  const { data: inserted, error } = await supabase
+    .from("staff")
+    .insert({
+      business_id: businessId,
+      name,
+      phone_number: phone,
+      role: input.role,
+      is_active: true,
+    })
+    .select("id")
+    .single();
+  if (error || !inserted) {
+    // staff_business_phone_unique — same number twice on one business.
+    if (error?.code === "23505") throw new Error("Someone on your team already uses that phone number");
+    throw new Error(error?.message ?? "Failed to add staff member");
+  }
+
+  // Compensating check: two concurrent adds can both pass the pre-check and
+  // both insert. Re-count after our insert and roll back the overflow row.
+  const { count, limit } = await activeSeatUsage(businessId);
+  if (count > limit) {
+    await supabase.from("staff").delete().eq("id", inserted.id).eq("business_id", businessId);
+    throw seatLimitError(limit);
+  }
+
+  revalidatePath("/dashboard/settings");
+}
+
+export async function setStaffActive(staffId: string, isActive: boolean): Promise<void> {
+  const { businessId } = await requireOwner();
+  const supabase = await createClient();
+
+  const { data: target, error: targetError } = await supabase
+    .from("staff")
+    .select("role, is_active")
+    .eq("id", staffId)
+    .eq("business_id", businessId)
+    .maybeSingle();
+  if (targetError) throw new Error(targetError.message);
+  if (!target) throw new Error("Staff member not found");
+  // Deactivating an owner would lock the whole business out (RLS keys off
+  // active staff rows), so the owner's seat is never toggleable.
+  if (target.role === "owner") throw new Error("The owner's seat can't be deactivated");
+  if (target.is_active === isActive) return;
+
+  // Reactivating takes a seat back, so it counts against the plan limit too.
+  if (isActive) await assertSeatAvailable(businessId);
+
+  const { error } = await supabase.from("staff").update({ is_active: isActive }).eq("id", staffId).eq("business_id", businessId);
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/settings");
 }

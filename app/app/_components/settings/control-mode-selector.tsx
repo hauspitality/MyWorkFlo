@@ -4,34 +4,40 @@ import { useState } from "react";
 import { Button } from "@/app/_components/ui";
 import type { ControlMode } from "@/lib/supabase/types";
 
-const MODES: Array<{ value: ControlMode; title: string; description: string }> = [
-  {
-    value: "draft",
-    title: "Draft",
-    description: "The AI drafts every reply, but your team taps approve before anything sends. Full control, slower.",
-  },
-  {
-    value: "assisted",
-    title: "Assisted",
-    description:
-      "The AI sends routine replies on its own. Anything involving a real booking or that it's unsure about still waits for your approval.",
-  },
-  {
-    value: "autopilot",
-    title: "Autopilot",
-    description:
-      "The AI handles the whole conversation end-to-end, including booking directly onto your calendar when it's confident. Fastest, least hands-on.",
-  },
-];
+function modesFor(approvalExpiryMinutes: number): Array<{ value: ControlMode; title: string; description: string }> {
+  // Honest disclosure of the approval window — the number comes from
+  // service_settings.approval_expiry_minutes (editable under Approvals).
+  const waitSentence = `Drafts wait up to ${approvalExpiryMinutes} minutes for your approval — after that the customer is told a person will follow up.`;
+  return [
+    {
+      value: "draft",
+      title: "Draft",
+      description: `The AI drafts every reply, but your team taps approve before anything sends. Full control, slower. ${waitSentence}`,
+    },
+    {
+      value: "assisted",
+      title: "Assisted",
+      description: `The AI sends routine replies on its own. Anything involving a real booking or that it's unsure about still waits for your approval. ${waitSentence}`,
+    },
+    {
+      value: "autopilot",
+      title: "Autopilot",
+      description:
+        "The AI handles the whole conversation end-to-end, including booking directly onto your calendar when it's confident. Fastest, least hands-on.",
+    },
+  ];
+}
 
 export function ControlModeSelector({
   initial,
   onSave,
   submitLabel = "Save",
+  approvalExpiryMinutes = 15,
 }: {
   initial: ControlMode;
   onSave: (mode: ControlMode) => Promise<void>;
   submitLabel?: string;
+  approvalExpiryMinutes?: number;
 }) {
   const [mode, setMode] = useState<ControlMode>(initial);
   const [saving, setSaving] = useState(false);
@@ -59,7 +65,7 @@ export function ControlModeSelector({
         you immediately — this setting never affects that.
       </p>
       <div className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Control mode">
-        {MODES.map((m) => (
+        {modesFor(approvalExpiryMinutes).map((m) => (
           <button
             key={m.value}
             role="radio"

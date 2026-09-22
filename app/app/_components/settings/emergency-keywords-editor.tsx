@@ -3,13 +3,16 @@
 import { useState } from "react";
 import { Button } from "@/app/_components/ui";
 import { EMERGENCY_CATEGORY_INFO } from "@/lib/hvac/emergencySignals";
+import { SafetyScriptsPreview } from "./safety-scripts-preview";
 
 export function EmergencyKeywordsEditor({
   initial,
+  businessName,
   onSave,
   submitLabel = "Save",
 }: {
   initial: string[];
+  businessName: string;
   onSave: (keywords: string[]) => Promise<void>;
   submitLabel?: string;
 }) {
@@ -61,6 +64,8 @@ export function EmergencyKeywordsEditor({
           ))}
         </div>
       </div>
+
+      <SafetyScriptsPreview businessName={businessName} />
 
       <div>
         <p className="mb-2 text-sm text-muted">

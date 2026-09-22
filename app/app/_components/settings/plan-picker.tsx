@@ -35,6 +35,7 @@ export function PlanPicker() {
           <p className="mt-1 text-xs text-muted">{p.blurb}</p>
         </a>
       ))}
+      <p className="pt-1 text-center text-xs text-muted">Every plan starts with a 14-day free trial. Cancel anytime.</p>
     </div>
   );
 }

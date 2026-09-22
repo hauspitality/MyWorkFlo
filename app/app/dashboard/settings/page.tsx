@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { timezoneLabel } from "@/lib/timezones";
 import { SettingsClient } from "./settings-client";
 import type { AppointmentTypeRow } from "@/app/_components/settings/appointment-types-editor";
-import type { BusinessHours, ControlMode, ServiceArea } from "@/lib/supabase/types";
+import type { BusinessHours, ControlMode, PlanTier, ServiceArea } from "@/lib/supabase/types";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -18,10 +18,14 @@ export default async function SettingsPage() {
 
   const [{ data: business }, { data: settings }, { data: apptRows }, { data: staffList }, { data: calendarConnection }] =
     await Promise.all([
-      supabase.from("businesses").select("name, timezone, control_mode, subscription_status").eq("id", businessId).single(),
+      supabase
+        .from("businesses")
+        .select("name, timezone, control_mode, subscription_status, plan_tier, twilio_phone_number")
+        .eq("id", businessId)
+        .single(),
       supabase
         .from("service_settings")
-        .select("business_hours, service_area, emergency_keywords")
+        .select("business_hours, service_area, emergency_keywords, approval_expiry_minutes")
         .eq("business_id", businessId)
         .single(),
       supabase
@@ -55,12 +59,16 @@ export default async function SettingsPage() {
       </p>
 
       <SettingsClient
+        businessName={business?.name ?? ""}
         controlMode={(business?.control_mode as ControlMode) ?? "draft"}
+        approvalExpiryMinutes={settings?.approval_expiry_minutes ?? 15}
         businessHours={(settings?.business_hours as BusinessHours) ?? {}}
         serviceArea={(settings?.service_area as ServiceArea) ?? { type: "zip_list", zips: [] }}
         emergencyKeywords={settings?.emergency_keywords ?? []}
         appointmentTypes={appointmentTypes}
         staff={staffList ?? []}
+        planTier={(business?.plan_tier as PlanTier) ?? null}
+        twilioPhoneNumber={business?.twilio_phone_number ?? null}
         calendarConnected={Boolean(calendarConnection)}
         subscriptionStatus={business?.subscription_status ?? null}
         userEmail={user.email ?? ""}

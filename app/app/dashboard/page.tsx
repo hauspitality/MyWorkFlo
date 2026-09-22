@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppointmentsSchedule, type ScheduleAppointment } from "@/app/_components/shell/appointments-schedule";
-import { Card, CardHeader, Chip, InitialAvatar } from "@/app/_components/ui";
+import { ButtonLink, Card, CardHeader, Chip, InitialAvatar } from "@/app/_components/ui";
 import {
   APPROVAL_TYPE_LABEL,
   APPROVAL_TYPE_TONE,
@@ -67,6 +67,24 @@ export default async function DashboardHomePage() {
   if (!staffRow) redirect("/onboarding");
   const businessId = staffRow.business_id;
 
+  const thirtyDaysAgo = new Date(new Date().getTime() - 30 * 86_400_000).toISOString();
+
+  // "Test your AI" runs are flagged is_simulation on conversations — keep them
+  // out of every customer-facing number below. Appointments and approvals only
+  // carry a conversation_id, so fetch the simulated conversation ids once and
+  // exclude by id (null conversation_id rows — e.g. the conversation was
+  // deleted — stay included).
+  const { data: simulatedConversations } = await supabase
+    .from("conversations")
+    .select("id")
+    .eq("business_id", businessId)
+    .eq("is_simulation", true);
+  const simulatedConversationIds = (simulatedConversations ?? []).map((c) => c.id);
+  const excludeSimulated = <Q extends { or(filters: string): Q }>(query: Q): Q =>
+    simulatedConversationIds.length
+      ? query.or(`conversation_id.is.null,conversation_id.not.in.(${simulatedConversationIds.join(",")})`)
+      : query;
+
   const [
     { data: business },
     { count: pendingApprovals },
@@ -75,38 +93,80 @@ export default async function DashboardHomePage() {
     { data: attentionItems },
     { data: recentConversations },
     { data: calendarConnection },
+    { count: missedCallsCaught },
+    { count: conversationsHandled },
+    { count: autopilotBookings },
+    { count: approvedBookings },
+    { count: callsEver },
   ] =
     await Promise.all([
       supabase.from("businesses").select("name, control_mode, subscription_status").eq("id", businessId).single(),
-      supabase.from("approval_queue").select("id", { count: "exact", head: true }).eq("business_id", businessId).eq("status", "pending"),
+      excludeSimulated(
+        supabase.from("approval_queue").select("id", { count: "exact", head: true }).eq("business_id", businessId).eq("status", "pending"),
+      ),
       supabase
         .from("conversations")
         .select("id", { count: "exact", head: true })
         .eq("business_id", businessId)
+        .eq("is_simulation", false)
         .in("status", ["active", "awaiting_staff_approval"]),
-      supabase
-        .from("appointments")
-        .select("id, scheduled_start, scheduled_end, appointment_types(name), leads(name, source_phone_number)")
-        .eq("business_id", businessId)
-        .eq("status", "confirmed")
-        .gte("scheduled_start", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
-        .lte("scheduled_start", new Date(new Date().getFullYear(), new Date().getMonth() + 2, 0).toISOString())
+      excludeSimulated(
+        supabase
+          .from("appointments")
+          .select("id, scheduled_start, scheduled_end, appointment_types(name), leads(name, source_phone_number)")
+          .eq("business_id", businessId)
+          .eq("status", "confirmed")
+          .gte("scheduled_start", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+          .lte("scheduled_start", new Date(new Date().getFullYear(), new Date().getMonth() + 2, 0).toISOString()),
+      )
         .order("scheduled_start", { ascending: true })
         .limit(200),
-      supabase
-        .from("approval_queue")
-        .select("id, type, payload, requested_at, conversation_id, conversations(leads(name, source_phone_number))")
-        .eq("business_id", businessId)
-        .eq("status", "pending")
+      excludeSimulated(
+        supabase
+          .from("approval_queue")
+          .select("id, type, payload, requested_at, conversation_id, conversations(leads(name, source_phone_number))")
+          .eq("business_id", businessId)
+          .eq("status", "pending"),
+      )
         .order("requested_at", { ascending: true })
         .limit(5),
       supabase
         .from("conversations")
         .select("id, status, matched_issue_code, last_message_at, leads(name, source_phone_number)")
         .eq("business_id", businessId)
+        .eq("is_simulation", false)
         .order("last_message_at", { ascending: false })
         .limit(3),
       supabase.from("calendar_connections").select("id").eq("business_id", businessId).eq("status", "active").maybeSingle(),
+      supabase
+        .from("calls")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", businessId)
+        .eq("triggered_text_back", true)
+        .gte("started_at", thirtyDaysAgo),
+      supabase
+        .from("conversations")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", businessId)
+        .eq("is_simulation", false)
+        .gte("started_at", thirtyDaysAgo),
+      excludeSimulated(
+        supabase
+          .from("appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", businessId)
+          .eq("booked_via", "autopilot")
+          .gte("created_at", thirtyDaysAgo),
+      ),
+      excludeSimulated(
+        supabase
+          .from("appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", businessId)
+          .eq("booked_via", "assisted_approval")
+          .gte("created_at", thirtyDaysAgo),
+      ),
+      supabase.from("calls").select("id", { count: "exact", head: true }).eq("business_id", businessId),
     ]);
 
   const upcomingCount = (upcomingAppointments ?? []).filter((a) => new Date(a.scheduled_start) >= new Date()).length;
@@ -138,16 +198,30 @@ export default async function DashboardHomePage() {
   const modeChip = CONTROL_MODE_CHIP[business?.control_mode ?? "draft"] ?? CONTROL_MODE_CHIP.draft;
   const planActive = business?.subscription_status === "active" || business?.subscription_status === "trialing";
 
+  const results = [
+    { label: "Missed calls caught", value: missedCallsCaught ?? 0 },
+    { label: "Conversations handled", value: conversationsHandled ?? 0 },
+    { label: "Booked on autopilot", value: autopilotBookings ?? 0 },
+    { label: "Booked with your approval", value: approvedBookings ?? 0 },
+  ];
+  // Hide only for a truly brand-new account: no results yet AND not a single call on record.
+  const showResults = results.some((r) => r.value > 0) || (callsEver ?? 0) > 0;
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <Greeting businessName={business?.name} />
-        <Link href="/dashboard/settings" aria-label="Control mode — change in settings">
-          <Chip tone={modeChip.tone}>
-            <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            {modeChip.label}
-          </Chip>
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/dashboard/settings" aria-label="Control mode — change in settings">
+            <Chip tone={modeChip.tone}>
+              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              {modeChip.label}
+            </Chip>
+          </Link>
+          <ButtonLink href="/dashboard/test" variant="secondary">
+            Test your AI
+          </ButtonLink>
+        </div>
       </div>
 
       {/* Stat strip */}
@@ -166,6 +240,24 @@ export default async function DashboardHomePage() {
           </Link>
         ))}
       </Card>
+
+      {/* Results — what the AI actually did with the calls you missed */}
+      {showResults && (
+        <Card className="mt-4">
+          <CardHeader title="Results — last 30 days" />
+          <div className="grid grid-cols-2 gap-x-4 gap-y-4 px-5 pb-4 pt-2 sm:grid-cols-4 sm:px-6">
+            {results.map((r) => (
+              <div key={r.label} className="min-w-0">
+                <p className="text-2xl font-semibold tabular-nums text-ink">{r.value}</p>
+                <p className="mt-0.5 text-xs text-muted">{r.label}</p>
+              </div>
+            ))}
+          </div>
+          <p className="border-t border-dashed border-line px-5 py-3 text-xs text-muted sm:px-6">
+            Missed-call rescues and texted-in leads, minus your test runs.
+          </p>
+        </Card>
+      )}
 
       <div className="mt-4 grid items-start gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2 lg:col-start-1 lg:row-start-1">
@@ -233,11 +325,11 @@ export default async function DashboardHomePage() {
               <div className="px-6 pb-6 pt-2 text-center">
                 <p className="text-sm font-medium text-ink-soft">No conversations yet</p>
                 <p className="mt-1 text-xs text-muted">
-                  Real texts land here automatically — or try the{" "}
-                  <Link href="/dashboard/dev/simulate" className="font-medium text-accent-blue hover:text-accent-blue-deep">
-                    SMS simulator
-                  </Link>
-                  .
+                  Real texts land here automatically — or{" "}
+                  <Link href="/dashboard/test" className="font-medium text-accent-blue hover:text-accent-blue-deep">
+                    Test your AI
+                  </Link>{" "}
+                  to see how it answers.
                 </p>
               </div>
             ) : (

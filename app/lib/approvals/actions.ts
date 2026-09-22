@@ -11,7 +11,7 @@ import { resolveApproval, type ResolveApprovalResult } from "@/lib/approvals/res
  * caller must prove active-staff membership of that business via the session
  * client before anything is resolved.
  */
-async function resolveAsStaff(approvalId: string, approve: boolean): Promise<ResolveApprovalResult> {
+async function resolveAsStaff(approvalId: string, approve: boolean, editedText?: string): Promise<ResolveApprovalResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -37,6 +37,7 @@ async function resolveAsStaff(approvalId: string, approve: boolean): Promise<Res
     approve,
     respondedBy: staff.id,
     responseChannel: null,
+    overrideDraftText: editedText,
   });
   revalidatePath("/dashboard/approvals");
   revalidatePath("/dashboard/leads", "layout");
@@ -45,8 +46,12 @@ async function resolveAsStaff(approvalId: string, approve: boolean): Promise<Res
   return result;
 }
 
-export async function approveApprovalAction(approvalId: string): Promise<ResolveApprovalResult> {
-  return resolveAsStaff(approvalId, true);
+/**
+ * @param editedText Staff-edited replacement for an outbound_message draft —
+ * when set, this exact text is sent instead of the stored draft.
+ */
+export async function approveApprovalAction(approvalId: string, editedText?: string): Promise<ResolveApprovalResult> {
+  return resolveAsStaff(approvalId, true, editedText);
 }
 
 export async function declineApprovalAction(approvalId: string): Promise<ResolveApprovalResult> {

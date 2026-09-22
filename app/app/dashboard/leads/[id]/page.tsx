@@ -11,6 +11,8 @@ import {
 } from "@/app/_components/conversation-status";
 import { formatDayLabel, formatPhone, formatTimeOfDay, humanizeCode } from "@/lib/format";
 import { ApprovalCard } from "../../approvals/approval-card";
+import { ReplyComposer } from "./reply-composer";
+import { ResolveButton } from "./resolve-button";
 
 const FIELD_LABELS: Record<string, string> = {
   symptom_onset: "Symptom onset",
@@ -53,7 +55,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const { data: conversation } = await supabase
     .from("conversations")
     .select(
-      "id, business_id, status, matched_issue_code, collected_fields, detected_language, turn_count, started_at, leads(id, name, source_phone_number, first_contact_at)",
+      "id, business_id, status, matched_issue_code, collected_fields, detected_language, turn_count, started_at, leads(id, name, source_phone_number, first_contact_at, status)",
     )
     .eq("id", id)
     .single();
@@ -97,6 +99,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
   const customerLabel = lead?.name?.trim().split(/\s+/)[0] || "Customer";
 
+  const canResolve = ["active", "escalated_emergency", "escalated_priority"].includes(conversation.status);
+  const customerOptedOut = lead?.status === "closed_lost";
+
   let previousDay = "";
 
   return (
@@ -119,14 +124,19 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             <p className="mt-0.5 text-sm tabular-nums text-muted">{formatPhone(lead?.source_phone_number)}</p>
           </div>
         </div>
-        {lead?.source_phone_number && (
-          <div className="flex shrink-0 gap-2">
-            <ButtonLink href={`tel:${lead.source_phone_number}`} variant="secondary">
-              Call
-            </ButtonLink>
-            <ButtonLink href={`sms:${lead.source_phone_number}`}>Text</ButtonLink>
-          </div>
-        )}
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {lead?.source_phone_number && (
+            <>
+              <ButtonLink href={`tel:${lead.source_phone_number}`} variant="secondary">
+                Call
+              </ButtonLink>
+              <ButtonLink href={`sms:${lead.source_phone_number}`}>Text</ButtonLink>
+            </>
+          )}
+          {canResolve && (
+            <ResolveButton conversationId={conversation.id} confirmFirst={conversation.status === "escalated_emergency"} />
+          )}
+        </div>
       </Card>
 
       <div className="mt-4 grid items-start gap-4 lg:grid-cols-3">
@@ -204,6 +214,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 })
               )}
             </div>
+            <ReplyComposer
+              conversationId={conversation.id}
+              disabledReason={
+                customerOptedOut ? "This customer asked us to stop texting them, so replies are turned off." : undefined
+              }
+            />
           </Card>
         </div>
       </div>

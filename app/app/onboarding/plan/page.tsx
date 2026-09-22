@@ -58,6 +58,10 @@ export default async function OnboardingPlanPage() {
           </Link>
         </div>
       )}
+      <p className="mt-6 text-xs text-muted">
+        Text messaging to customers goes live after carrier registration (usually a few days) — required by US
+        carriers for business texting.
+      </p>
     </OnboardingShell>
   );
 }

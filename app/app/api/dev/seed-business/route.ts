@@ -11,6 +11,9 @@ import { createClient } from "@/lib/supabase/server";
  * the tenant-scoping.
  */
 export async function POST() {
+  // Production gate: onboarding creates real businesses, so this dev seeding
+  // shortcut has no production purpose — exposing it would let any signup
+  // wedge their own onboarding with a canned "Dev Test HVAC Co.".
   if (process.env.NODE_ENV === "production" && process.env.ENABLE_DEV_SIMULATOR !== "true") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

@@ -105,6 +105,8 @@ export interface ServiceSettings {
   min_notice_hours: number;
   weather_thresholds: WeatherThresholds;
   ai_persona_name: string | null;
+  /** Minutes a pending approval waits for staff before the cron sweeper expires it (migration 0006). */
+  approval_expiry_minutes: number;
   updated_at: string;
 }
 
@@ -189,6 +191,8 @@ export interface Conversation {
   weather_elevated: boolean;
   collected_fields: Record<string, string | boolean | null>;
   turn_count: number;
+  /** True for simulator/test-drive traffic — never mixed with real conversations (migration 0007). */
+  is_simulation: boolean;
   started_at: string;
   last_message_at: string;
   closed_reason: string | null;

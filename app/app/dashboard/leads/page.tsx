@@ -77,9 +77,9 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
               "Try a different name, phone number, or issue."
             ) : (
               <>
-                Real conversations land here once texts start coming in, or try the{" "}
-                <Link href="/dashboard/dev/simulate" className="font-medium text-accent-blue hover:text-accent-blue-deep">
-                  SMS simulator
+                Real conversations land here once texts start coming in, or{" "}
+                <Link href="/dashboard/test" className="font-medium text-accent-blue hover:text-accent-blue-deep">
+                  Test your AI
                 </Link>
                 .
               </>

@@ -6,11 +6,10 @@ import { EmergencyKeywordsStep } from "./emergency-keywords-step";
 export default async function OnboardingEmergencyKeywordsPage() {
   const businessId = await resolveOnboardingBusinessId();
   const supabase = await createClient();
-  const { data: settings } = await supabase
-    .from("service_settings")
-    .select("emergency_keywords")
-    .eq("business_id", businessId)
-    .single();
+  const [{ data: settings }, { data: business }] = await Promise.all([
+    supabase.from("service_settings").select("emergency_keywords").eq("business_id", businessId).single(),
+    supabase.from("businesses").select("name").eq("id", businessId).single(),
+  ]);
 
   return (
     <OnboardingShell
@@ -18,7 +17,7 @@ export default async function OnboardingEmergencyKeywordsPage() {
       title="Safety triggers"
       subtitle="These always send an instant, pre-written safety reply — no waiting on approval, ever."
     >
-      <EmergencyKeywordsStep initial={settings?.emergency_keywords ?? []} />
+      <EmergencyKeywordsStep initial={settings?.emergency_keywords ?? []} businessName={business?.name ?? "your business"} />
     </OnboardingShell>
   );
 }
