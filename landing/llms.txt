@@ -1,23 +1,24 @@
 # MyWorkFlo
 
-> MyWorkFlo is an AI front desk (phone answering and booking service) for HVAC and home-service teams. When a call is missed, it texts the customer back right away, books the visit if it's simple, and gets a human on the line if it sounds urgent.
+> MyWorkFlo is an AI front desk for HVAC and home-service teams. Calls still ring the business first — when one is missed, MyWorkFlo texts the customer back in seconds, books the visit if it's simple, and alerts a human if it sounds urgent.
 
 ## Key facts
 
 - Built for small HVAC and home-service shops — from solo operators to multi-tech teams.
-- Self-serve setup in about 10 minutes; no demo or sales call required.
+- Self-serve setup in about 10 minutes; no demo or sales call required. No contract, no setup fee — cancel anytime.
+- Your phone number stays the same; calls ring the business first and MyWorkFlo steps in only when a call is missed.
 - Real calendar booking is included on every plan, not an upsell.
 - Emergency-keyword triage: gas smell, flooding, sparks, or a burning smell trigger a locked, pre-approved safety script and instant human handoff.
-- Answers callers in English and Spanish on every plan.
+- Texts with customers in English and Spanish on every plan.
 - Three control modes: Draft (staff approves every message), Assisted (texts on its own, bookings wait for approval), Autopilot (approved appointment types book automatically).
 - It will not guess at repairs, invent arrival times, or quote prices it isn't sure about.
-- Works alongside existing tools (business phone, texts, Google Calendar, Jobber, Housecall Pro, email) — no website required.
+- Works alongside existing tools (business phone, texts, Google Calendar, email) — no website required.
 
 ## Pricing (per month)
 
-- Starter — $119/mo: solo operators; missed-call text-back, real calendar booking, emergency detection, English/Spanish.
-- Growth — $299/mo: 2–10 tech businesses; round-the-clock coverage, booking with approval, estimate follow-up, lead dashboard.
-- Pro — $599/mo: multi-tech teams; multiple numbers/locations, CRM connection, custom routing, priority support.
+- Starter — $119/mo: solo operators; missed-call text-back, real calendar booking, emergency detection, English/Spanish texting.
+- Growth — $299/mo: 2–10 tech businesses; round-the-clock missed-call coverage, one-tap booking approval, office staff seats, lead dashboard.
+- Pro — $599/mo: bigger multi-tech operations; everything in Growth plus multiple numbers/locations, custom setup with the MyWorkFlo team, priority support.
 
 ## Links
 
@@ -26,4 +27,4 @@
 - [MyWorkFlo alternatives — honest comparison of Smith.ai, Podium, Avoca, Allo, Retell AI, and Ruby](https://myworkflo.com/alternatives)
 - [MyWorkFlo vs Smith.ai](https://myworkflo.com/compare/myworkflo-vs-smith-ai)
 - [MyWorkFlo vs Podium](https://myworkflo.com/compare/myworkflo-vs-podium)
-- [App sign-in](https://app.myworkflo.com/login)
+- [Start free setup / app sign-in](https://app.myworkflo.com/login)

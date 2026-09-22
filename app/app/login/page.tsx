@@ -108,8 +108,11 @@ function LoginForm() {
         ) : (
           <div className="space-y-4">
             <div>
-              <h1 className="mb-1 text-xl font-semibold">Sign in</h1>
-              <p className="text-sm text-muted">One tap with Google — no password to remember.</p>
+              <h1 className="mb-1 text-xl font-semibold">Sign in or create your account</h1>
+              <p className="text-sm text-muted">
+                One tap with Google — no password to remember. New here? Same button; setup takes
+                about 10 minutes.
+              </p>
             </div>
 
             <button

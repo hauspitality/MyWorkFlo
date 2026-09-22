@@ -72,6 +72,7 @@ auditForm?.addEventListener("submit", (event) => {
   auditResult.innerHTML = `
     <span class="result-label">What MyWorkFlo would do for your ${trade} business</span>
     <strong>Start by ${workflow}</strong>
-    <p>It would connect to ${toolStack}. One job you would've otherwise missed is worth about $${oneJobValue.toLocaleString()} — recover three in a month and that's about $${threeJobValue.toLocaleString()}. Best plan to start with: ${likelyPlan}, which includes booking, emergency detection, and handing off to a person when needed.</p>
+    <p>It works alongside ${toolStack}. One job you would've otherwise missed is worth about $${oneJobValue.toLocaleString()} — recover three in a month and that's about $${threeJobValue.toLocaleString()}. Best plan to start with: ${likelyPlan}, which includes booking, emergency detection, and handing off to a person when needed.</p>
+    <a class="button button-primary audit-cta" href="https://app.myworkflo.com/login">Start my setup — about 10 minutes</a>
   `;
 });
