@@ -1,3 +1,7 @@
 {
-  "cleanUrls": true
+  "cleanUrls": true,
+  "redirects": [
+    { "source": "/privacy", "destination": "https://app.myworkflo.com/privacy", "statusCode": 308 },
+    { "source": "/terms", "destination": "https://app.myworkflo.com/terms", "statusCode": 308 }
+  ]
 }

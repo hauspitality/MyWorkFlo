@@ -68,7 +68,7 @@
           "name": "Pro",
           "price": "599",
           "priceCurrency": "USD",
-          "description": "Per month. For multi-tech teams with more numbers, locations, routing rules, and integrations."
+          "description": "Per month. For bigger multi-tech operations, with hands-on setup by the MyWorkFlo team and priority support."
         }
       ]
     }
@@ -91,7 +91,7 @@
           "name": "How much does MyWorkFlo cost?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Starter is $119/mo for solo operators, Growth is $299/mo for 2–10 tech businesses, and Pro is $599/mo for multi-tech teams. Real calendar booking and English/Spanish texting are included on every plan. No contract, no setup fee — cancel anytime."
+            "text": "Starter is $119/mo for solo operators, Growth is $299/mo for 2–10 tech businesses, and Pro is $599/mo for multi-tech teams. Real calendar booking and English/Spanish texting are included on every plan. Every plan starts with a 14-day free trial. No contract, no setup fee — cancel anytime."
           }
         },
         {
@@ -99,7 +99,15 @@
           "name": "How long does setup take?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "About 10 minutes. You sign up and connect your calendar yourself — no demo, no waiting on a salesperson."
+            "text": "About 10 minutes to set everything up — you sign up and connect your calendar yourself, no demo and no salesperson. One honest note: before it can text real customers, phone carriers have to approve your business for texting (a standard registration called A2P), and that usually takes a few days."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "When can it start texting my customers?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can set everything up and see how it works right away. Before it can text real customers, phone carriers have to approve your business for texting — a standard registration called A2P. Carrier registration is part of setup — we'll walk you through it, and texting turns on when carriers approve (usually a few days)."
           }
         },
         {
@@ -131,7 +139,7 @@
           "name": "Do I have to change my phone number?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "No. Your number stays your number, and calls still ring your phone first. MyWorkFlo steps in the moment a call gets missed — that's the only part that changes."
+            "text": "No. Your number stays your number, and your phone rings exactly like before. A simple forwarding setting sends only the calls you miss to your MyWorkFlo number — that's the only change."
           }
         },
         {
@@ -204,7 +212,7 @@
               <a class="button button-primary" href="https://app.myworkflo.com/login">Start my setup — about 10 minutes</a>
               <a class="button button-secondary" href="#audit">See what missed calls cost you</a>
             </div>
-            <p class="cta-note">No contract, no setup fee, cancel anytime. You set the schedule, the safety rules, and the price.</p>
+            <p class="cta-note">No contract, no setup fee, cancel anytime. Setup takes about 10 minutes — texting real customers starts after a standard carrier registration, usually a few days.</p>
 
             <div class="week-sample">
               <p class="week-sample-label">What a typical week could look like for a six-tech shop</p>
@@ -368,7 +376,7 @@
             <p>The second a call is missed, MyWorkFlo sends a text so the customer doesn't hang up and call someone else.</p>
             <ul>
               <li>Sent within seconds</li>
-              <li>Includes the required opt-out text</li>
+              <li>Every first text includes opt-out language (reply STOP)</li>
               <li>Details saved for your team</li>
             </ul>
           </article>
@@ -564,6 +572,23 @@
         </div>
       </section>
 
+      <section class="section sms-example-section" aria-labelledby="sms-example-title">
+        <div class="section-heading">
+          <h2 id="sms-example-title">What a rescued call looks like.</h2>
+        </div>
+        <figure class="sms-example" role="group" aria-label="Example text conversation, simulated">
+          <figcaption class="sms-example-label">Example conversation &mdash; simulated</figcaption>
+          <div class="sms-thread">
+            <p class="sms-bubble sms-out">Hi, this is the front desk for Beacon Heating &amp; Air. Sorry we missed your call &mdash; how can we help? Reply STOP to opt out.</p>
+            <p class="sms-bubble sms-in">Our AC quit this afternoon. It's 84 in the house.</p>
+            <p class="sms-bubble sms-out">That's no fun in this heat &mdash; let's get someone out. We have tomorrow between 9 and 11am open. Does that work?</p>
+            <p class="sms-bubble sms-in">Yes, 9 to 11 works.</p>
+            <p class="sms-bubble sms-out">You're booked for tomorrow between 9 and 11am. See you then!</p>
+          </div>
+          <p class="sms-example-note">Beacon Heating &amp; Air is a made-up shop &mdash; this shows the flow, not a real customer.</p>
+        </figure>
+      </section>
+
       <section class="section pricing-section" id="pricing">
         <div class="section-heading">
           <div>
@@ -586,7 +611,7 @@
               <li>English/Spanish texting</li>
               <li>Every conversation logged</li>
             </ul>
-            <a class="button button-secondary" href="https://app.myworkflo.com/login">Start with Starter</a>
+            <a class="button button-secondary" href="https://app.myworkflo.com/login">Start 14-day free trial</a>
           </article>
           <article class="price-card highlighted">
             <div class="price-card-head">
@@ -598,11 +623,11 @@
             <ul>
               <li>Covers missed calls around the clock</li>
               <li>Books with your one-tap approval</li>
-              <li>Sends urgent calls to a person</li>
-              <li>Seats for your office staff</li>
+              <li>Urgent issues alert a person instantly</li>
+              <li>Add office staff who get approval texts</li>
               <li>Dashboard of every lead</li>
             </ul>
-            <a class="button button-primary" href="https://app.myworkflo.com/login">Start with Growth</a>
+            <a class="button button-primary" href="https://app.myworkflo.com/login">Start 14-day free trial</a>
           </article>
           <article class="price-card">
             <div class="price-card-head">
@@ -613,14 +638,28 @@
             <div class="ticket-tear" aria-hidden="true"></div>
             <ul>
               <li>Everything in Growth</li>
-              <li>Multiple numbers or locations</li>
-              <li>Custom setup with our team</li>
+              <li>We set everything up with you</li>
               <li>Priority support</li>
             </ul>
             <a class="button button-secondary" href="https://calendar.app.google/nzDu9T3s2b2A5Jo68" target="_blank" rel="noopener">Book a 15-minute call</a>
           </article>
         </div>
-        <p class="pricing-note">No contract. No setup fee. Cancel anytime from Settings. <a href="/pricing">Full pricing details &amp; FAQ &#8594;</a></p>
+        <p class="pricing-note">Every plan starts with a <strong>14-day free trial</strong>. No contract. No setup fee. Cancel anytime from Settings. <a href="/pricing">Full pricing details &amp; FAQ &#8594;</a></p>
+      </section>
+
+      <section class="section founder-section" aria-labelledby="founder-title">
+        <div class="founder-card">
+          <p class="founder-kicker">A note from the founder</p>
+          <h2 id="founder-title">Built by someone who lost jobs to missed calls.</h2>
+          <p>
+            I'm Damon Lawrence. Before MyWorkFlo, I ran hospitality properties, where the phone was the whole
+            business &mdash; and I watched good jobs go to whoever picked up first. MyWorkFlo is the tool I wished
+            I'd had: it answers fast, follows the rules you set, and brings in a person the moment something matters.
+            If you're not sure it fits your shop, email me at
+            <a href="mailto:support@myworkflo.com">support@myworkflo.com</a> and I'll give you a straight answer.
+          </p>
+          <p class="founder-sign">&mdash; Damon Lawrence, founder</p>
+        </div>
       </section>
 
       <section class="section security-section" id="safety">
@@ -641,7 +680,7 @@
           <article>
             <span class="gauge-dot gauge-brass"></span>
             <h3>You approve the scripts</h3>
-            <p>You control what it says about pricing, follow-up timing, and opting out of texts. Emergency safety scripts are locked and pre-approved, so they're never watered down.</p>
+            <p>You control what it's allowed to say about pricing, and you choose how much it does on its own. Emergency safety scripts are locked and pre-approved, so they're never watered down.</p>
           </article>
           <article>
             <span class="gauge-dot gauge-blue"></span>
@@ -679,7 +718,20 @@
           </details>
           <details>
             <summary>How long does setup take?</summary>
-            <p>About 10 minutes. You sign up and connect your calendar yourself &mdash; no demo, no waiting on a salesperson.</p>
+            <p>
+              About 10 minutes to set everything up &mdash; you sign up and connect your calendar yourself, no demo
+              and no salesperson. One honest note: before it can text real customers, phone carriers have to approve
+              your business for texting (a standard registration called A2P), and that usually takes a few days.
+            </p>
+          </details>
+          <details>
+            <summary>When can it start texting my customers?</summary>
+            <p>
+              You can set everything up and see how it works right away. Before it can text real customers, phone
+              carriers have to approve your business for texting &mdash; a standard registration called A2P. Carrier
+              registration is part of setup &mdash; we'll walk you through it, and texting turns on when carriers
+              approve (usually a few days).
+            </p>
           </details>
           <details>
             <summary>What happens when a call is a real emergency?</summary>
@@ -701,8 +753,8 @@
           <details>
             <summary>Do I have to change my phone number?</summary>
             <p>
-              No. Your number stays your number, and calls still ring your phone first. MyWorkFlo steps in the
-              moment a call gets missed &mdash; that's the only part that changes.
+              No. Your number stays your number, and your phone rings exactly like before. A simple forwarding
+              setting sends only the calls you miss to your MyWorkFlo number &mdash; that's the only change.
             </p>
           </details>
           <details>
@@ -741,6 +793,7 @@
             <a href="/alternatives">Alternatives &amp; comparisons</a>
             <a href="https://app.myworkflo.com/privacy">Privacy</a>
             <a href="https://app.myworkflo.com/terms">Terms</a>
+            <a href="mailto:support@myworkflo.com">support@myworkflo.com</a>
           </nav>
         </div>
       </div>
@@ -768,7 +821,8 @@
       </div>
     </footer>
     <p class="footer-legal">
-      All rights reserved &copy; 2026 MyWorkFlo &middot; <a href="https://app.myworkflo.com/privacy">Privacy</a> &middot;
+      All rights reserved &copy; 2026 MyWorkFlo &middot; <a href="mailto:support@myworkflo.com">support@myworkflo.com</a> &middot;
+      <a href="https://app.myworkflo.com/privacy">Privacy</a> &middot;
       <a href="https://app.myworkflo.com/terms">Terms</a> &middot; Text recipients can reply STOP to opt out or HELP for
       help; message and data rates may apply.
     </p>

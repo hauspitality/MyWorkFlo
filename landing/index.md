@@ -1,6 +1,6 @@
 # MyWorkFlo — Answer every call. Book the job. Get a human when it matters.
 
-MyWorkFlo is an AI front desk for HVAC and home-service teams. Your calls still ring you first — miss one, and it texts the customer back in seconds, books the visit if it's simple, and alerts you if it sounds urgent. About 10 minutes to set up. No salesperson, no new software to learn. No contract — cancel anytime.
+MyWorkFlo is an AI front desk for HVAC and home-service teams. Your calls still ring you first — miss one, and it texts the customer back in seconds, books the visit if it's simple, and alerts you if it sounds urgent. About 10 minutes to set up; texting real customers starts after a standard carrier registration for business texting (A2P), usually a few days. No salesperson, no new software to learn. 14-day free trial on every plan; no contract — cancel anytime.
 
 Works alongside the tools you already use — business phone, text messages, Google Calendar, email — even if that's just a phone and a paper calendar.
 
@@ -37,8 +37,8 @@ Works alongside the tools you already use — business phone, text messages, Goo
 | Plan | Price | Best for | Includes |
 | --- | --- | --- | --- |
 | Starter | $119/mo | Solo operators | Missed-call text-back, real calendar booking, emergency detection, English/Spanish texting, every conversation logged |
-| Growth | $299/mo | 2–10 tech businesses | Round-the-clock missed-call coverage, one-tap booking approval, urgent-call handoff, office staff seats, lead dashboard |
-| Pro | $599/mo | Bigger multi-tech operations | Everything in Growth, multiple numbers/locations, custom setup with our team, priority support |
+| Growth | $299/mo | 2–10 tech businesses | Round-the-clock missed-call coverage, one-tap booking approval, urgent-call handoff, office staff added for approval texts, lead dashboard |
+| Pro | $599/mo | Bigger multi-tech operations | Everything in Growth, hands-on setup with our team, priority support |
 
 No contract. No setup fee. Cancel anytime from Settings.
 
@@ -50,9 +50,11 @@ Home service calls can be urgent. MyWorkFlo knows its limits: it won't guess at 
 
 **What is MyWorkFlo?** MyWorkFlo is the AI front desk for HVAC and home-service teams. Your calls still ring you first — when one gets missed, it texts the customer back right away, books the visit if it's simple, and alerts you if it sounds urgent.
 
-**How much does MyWorkFlo cost?** Starter is $119/mo for solo operators, Growth is $299/mo for 2–10 tech businesses, and Pro is $599/mo for multi-tech teams. Real calendar booking and English/Spanish texting are included on every plan. No contract, no setup fee — cancel anytime.
+**How much does MyWorkFlo cost?** Starter is $119/mo for solo operators, Growth is $299/mo for 2–10 tech businesses, and Pro is $599/mo for multi-tech teams. Real calendar booking and English/Spanish texting are included on every plan. Every plan starts with a 14-day free trial. No contract, no setup fee — cancel anytime.
 
-**How long does setup take?** About 10 minutes. You sign up and connect your calendar yourself — no demo, no waiting on a salesperson.
+**How long does setup take?** About 10 minutes to set everything up — you sign up and connect your calendar yourself, no demo and no salesperson. One honest note: before it can text real customers, phone carriers have to approve your business for texting (a standard registration called A2P), and that usually takes a few days.
+
+**When can it start texting my customers?** You can set everything up and see how it works right away. Before it can text real customers, phone carriers have to approve your business for texting — a standard registration called A2P. Carrier registration is part of setup — we'll walk you through it, and texting turns on when carriers approve (usually a few days).
 
 **What happens when a call is a real emergency?** Gas smell, flooding, sparks, a burning smell — anything dangerous sends a locked, pre-approved safety script instantly and notifies your team right away.
 
@@ -60,9 +62,9 @@ Home service calls can be urgent. MyWorkFlo knows its limits: it won't guess at 
 
 **Can it answer in Spanish?** Yes. Every plan texts with customers in both English and Spanish — it isn't a paid add-on.
 
-**Do I have to change my phone number?** No. Your number stays your number, and calls still ring your phone first. MyWorkFlo steps in the moment a call gets missed — that's the only part that changes.
+**Do I have to change my phone number?** No. Your number stays your number, and your phone rings exactly like before. A simple forwarding setting sends only the calls you miss to your MyWorkFlo number — that's the only change.
 
-**Is there a contract?** No contract and no setup fee. You can change plans or cancel anytime from Settings.
+**Is there a contract?** No — every plan starts with a 14-day free trial, and there's no contract and no setup fee. You can change plans or cancel anytime from Settings.
 
 ---
 

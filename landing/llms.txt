@@ -5,8 +5,8 @@
 ## Key facts
 
 - Built for small HVAC and home-service shops — from solo operators to multi-tech teams.
-- Self-serve setup in about 10 minutes; no demo or sales call required. No contract, no setup fee — cancel anytime.
-- Your phone number stays the same; calls ring the business first and MyWorkFlo steps in only when a call is missed.
+- Self-serve configuration in about 10 minutes; no demo or sales call required. Texting real customers begins after standard carrier registration for business texting (A2P), typically a few days. Every plan starts with a 14-day free trial. No contract, no setup fee — cancel anytime.
+- Your phone number stays the same and rings the business first; a conditional call forwarding setting sends only unanswered calls to the business's MyWorkFlo number.
 - Real calendar booking is included on every plan, not an upsell.
 - Emergency-keyword triage: gas smell, flooding, sparks, or a burning smell trigger a locked, pre-approved safety script and instant human handoff.
 - Texts with customers in English and Spanish on every plan.
@@ -17,8 +17,8 @@
 ## Pricing (per month)
 
 - Starter — $119/mo: solo operators; missed-call text-back, real calendar booking, emergency detection, English/Spanish texting.
-- Growth — $299/mo: 2–10 tech businesses; round-the-clock missed-call coverage, one-tap booking approval, office staff seats, lead dashboard.
-- Pro — $599/mo: bigger multi-tech operations; everything in Growth plus multiple numbers/locations, custom setup with the MyWorkFlo team, priority support.
+- Growth — $299/mo: 2–10 tech businesses; round-the-clock missed-call coverage, one-tap booking approval, office staff can be added to receive approval texts, lead dashboard.
+- Pro — $599/mo: bigger multi-tech operations; everything in Growth plus hands-on setup with the MyWorkFlo team and priority support.
 
 ## Links
 
