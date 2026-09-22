@@ -91,7 +91,7 @@ export async function recordMissedCallAndTextBack(params: {
 
   const conversationId = await resolveConversationId(businessId, leadId);
 
-  const openerText = `Sorry we missed your call — this is ${businessName}. Text us here what's going on and we'll get you scheduled.`;
+  const openerText = `Sorry we missed your call — this is ${businessName}. Text back what's going on and we'll get you taken care of.`;
 
   let messageStatus: "sent" | "failed" = "sent";
   let messageSid: string | null = null;

@@ -130,7 +130,7 @@ export const RESPOND_TOOL: ToolSpec = {
       reply_text: {
         type: "string",
         description:
-          "The SMS to send the customer. Short, plain, direct — like a dispatcher texting, not a chatbot. Never include a price or date/time that didn't come from a tool result.",
+          "The SMS to send the customer. Short, warm, plain English a 12-year-old could read — full sentences, no trade jargon, no bullet lists. Never include a price or date/time that didn't come from a tool result.",
       },
       language: { type: "string", enum: ["en", "es"] },
       matched_issue_code: {

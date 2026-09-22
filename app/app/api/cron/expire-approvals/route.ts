@@ -56,7 +56,7 @@ export async function GET(request: Request) {
 
     // Customer fallback so they aren't left waiting on an approval that
     // never came.
-    const fallbackText = "Thanks for your patience — a team member is going to follow up with you directly shortly.";
+    const fallbackText = "Thanks for waiting — someone from our team will text you back shortly.";
     let fallbackStatus: "sent" | "failed" = "sent";
     let fallbackSid: string | null = null;
     if (isTwilioConfigured() && leadRow?.source_phone_number) {

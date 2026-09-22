@@ -98,7 +98,7 @@ export async function runTurn(context: ConversationContext, inboundText: string)
   // rather than looping forever or guessing.
   return {
     decision: {
-      reply_text: "Let me get someone from our office to help with this — they'll follow up shortly.",
+      reply_text: "Let me get a real person on this for you — someone from our team will text you back shortly.",
       language: fallbackLanguage,
       emergency_flag: false,
       intent: "unclear",
