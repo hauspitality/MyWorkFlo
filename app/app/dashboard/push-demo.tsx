@@ -65,39 +65,39 @@ export function PushDemo() {
 
   if (!supported) {
     return (
-      <div className="rounded-2xl border border-line bg-card p-6">
-        <p className="text-sm text-ink-soft">Push notifications aren&rsquo;t supported in this browser.</p>
+      <div className="rounded-2xl border border-line bg-card p-5 shadow-card">
+        <p className="text-xs text-muted">Push notifications aren&rsquo;t supported in this browser.</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-line bg-card p-6">
-      <h2 className="mb-1 text-lg font-semibold">Push notifications</h2>
+    <div className="rounded-2xl border border-line bg-card p-5 shadow-card">
+      <h2 className="mb-1 text-sm font-semibold text-ink">Push notifications</h2>
       {subscription ? (
         <div className="space-y-3">
-          <p className="text-sm text-ink-soft">This device is subscribed.</p>
+          <p className="text-xs text-muted">This device is subscribed.</p>
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-ink-soft">Test message</span>
+            <span className="mb-1.5 block text-xs font-medium text-ink-soft">Test message</span>
             <input
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="h-11 w-full rounded-xl border border-line bg-paper px-3 text-sm outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
+              className="h-10 w-full rounded-xl border border-line bg-paper px-3 text-sm outline-none transition-colors focus:border-accent-blue/50 focus:bg-card"
             />
           </label>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={handleSendTest}
-              className="h-10 rounded-full bg-accent-blue px-4 text-sm font-semibold text-white hover:bg-accent-blue-deep"
+              className="h-10 rounded-full bg-accent-blue px-4 text-[13px] font-semibold text-white hover:bg-accent-blue-deep"
             >
               Send test
             </button>
             <button
               type="button"
               onClick={handleUnsubscribe}
-              className="h-10 rounded-full border border-line px-4 text-sm font-semibold text-ink-soft hover:bg-paper"
+              className="h-10 rounded-full border border-line px-4 text-[13px] font-semibold text-ink-soft hover:bg-paper"
             >
               Disable
             </button>
@@ -105,20 +105,20 @@ export function PushDemo() {
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-sm text-ink-soft">
+          <p className="text-xs text-muted">
             Enable push to get alerted here when something needs your review.
           </p>
           <button
             type="button"
             onClick={handleSubscribe}
-            className="h-10 rounded-full bg-accent-blue px-4 text-sm font-semibold text-white hover:bg-accent-blue-deep"
+            className="h-10 rounded-full bg-accent-blue px-4 text-[13px] font-semibold text-white hover:bg-accent-blue-deep"
           >
             Enable push notifications
           </button>
         </div>
       )}
       {status && (
-        <p className={`mt-3 text-sm ${status.isError ? "text-gauge-red" : "text-ink-soft"}`}>
+        <p className={`mt-3 text-xs ${status.isError ? "text-gauge-red" : "text-ink-soft"}`}>
           {status.text}
         </p>
       )}

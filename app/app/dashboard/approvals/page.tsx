@@ -28,12 +28,17 @@ export default async function ApprovalsPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 lg:px-8">
-      <h1 className="text-2xl font-semibold text-ink lg:text-3xl">Approvals</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-ink lg:text-3xl">Approvals</h1>
       <p className="mt-1 text-sm text-muted">Oldest first.</p>
 
       {!approvals?.length ? (
-        <div className="mt-8 rounded-lg border border-line bg-card p-8 text-center">
-          <p className="text-sm text-ink-soft">Nothing waiting on you right now.</p>
+        <div className="mt-6 flex flex-col items-center rounded-2xl border border-line bg-card px-6 py-10 text-center shadow-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-8 w-8 text-gauge-green" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="m8.5 12.2 2.4 2.4 4.6-5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <p className="mt-3 text-sm font-medium text-ink-soft">All clear</p>
+          <p className="mt-1 text-xs text-muted">Nothing is waiting on your approval right now.</p>
         </div>
       ) : (
         <div className="mt-6 space-y-2">

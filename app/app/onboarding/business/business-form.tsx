@@ -46,7 +46,7 @@ export function BusinessForm() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Weldon Heating & Air"
-          className="h-12 w-full rounded-xl border border-line bg-paper px-4 text-base outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
+          className="h-12 w-full rounded-xl border border-line bg-paper px-4 text-base outline-none focus:border-accent-blue/50 focus:ring-2 focus:ring-accent-blue/15"
         />
       </label>
       <label className="block text-sm">
@@ -54,7 +54,7 @@ export function BusinessForm() {
         <select
           value={timezone}
           onChange={(e) => setTimezone(e.target.value)}
-          className="h-12 w-full rounded-xl border border-line bg-paper px-4 text-base outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
+          className="h-12 w-full rounded-xl border border-line bg-paper px-4 text-base outline-none focus:border-accent-blue/50 focus:ring-2 focus:ring-accent-blue/15"
         >
           {TIMEZONES.map((tz) => (
             <option key={tz.value} value={tz.value}>
@@ -70,7 +70,7 @@ export function BusinessForm() {
           value={ownerName}
           onChange={(e) => setOwnerName(e.target.value)}
           placeholder="Damon Lawrence"
-          className="h-12 w-full rounded-xl border border-line bg-paper px-4 text-base outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
+          className="h-12 w-full rounded-xl border border-line bg-paper px-4 text-base outline-none focus:border-accent-blue/50 focus:ring-2 focus:ring-accent-blue/15"
         />
       </label>
       <label className="block text-sm">
@@ -82,7 +82,7 @@ export function BusinessForm() {
           value={ownerPhone}
           onChange={(e) => setOwnerPhone(e.target.value)}
           placeholder="+1 555 555 0100"
-          className="h-12 w-full rounded-xl border border-line bg-paper px-4 text-base outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
+          className="h-12 w-full rounded-xl border border-line bg-paper px-4 text-base outline-none focus:border-accent-blue/50 focus:ring-2 focus:ring-accent-blue/15"
         />
         <span className="mt-1 block text-xs text-muted">Where emergency alerts and approval texts go.</span>
       </label>

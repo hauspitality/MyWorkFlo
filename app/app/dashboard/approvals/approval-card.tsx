@@ -39,9 +39,9 @@ export function ApprovalCard({ id, typeLabel, summary, requestedAt, expiresAt }:
   }
 
   return (
-    <div className="rounded-lg border border-line bg-card p-4">
+    <div className="rounded-2xl border border-line bg-card p-5 shadow-card">
       <div className="flex items-center justify-between gap-3">
-        <span className="rounded-full bg-brass-soft px-2.5 py-1 text-xs font-medium text-brass-deep">{typeLabel}</span>
+        <span className="rounded-full bg-gauge-amber-soft px-2.5 py-1 text-xs font-medium text-gauge-amber">{typeLabel}</span>
         <span className="text-xs text-muted">{new Date(requestedAt).toLocaleString()}</span>
       </div>
       <p className="mt-3 text-sm text-ink-soft">{summary}</p>

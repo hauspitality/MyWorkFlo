@@ -158,7 +158,7 @@ function LoginForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@yourcompany.com"
-                    className="h-12 w-full rounded-xl border border-line bg-paper px-4 text-base outline-none focus:border-brass focus:ring-2 focus:ring-brass/20"
+                    className="h-12 w-full rounded-xl border border-line bg-paper px-4 text-base outline-none focus:border-accent-blue/50 focus:ring-2 focus:ring-accent-blue/15"
                   />
                 </label>
                 <button

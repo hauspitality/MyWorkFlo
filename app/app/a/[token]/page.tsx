@@ -62,7 +62,7 @@ export default async function MagicLinkApprovalPage({ params }: { params: Promis
   return (
     <Shell>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <span className="rounded-full bg-brass-soft px-2.5 py-1 text-xs font-medium text-brass-deep">
+        <span className="rounded-full bg-gauge-amber-soft px-2.5 py-1 text-xs font-medium text-gauge-amber">
           {TYPE_LABEL[approval.type] ?? approval.type}
         </span>
       </div>

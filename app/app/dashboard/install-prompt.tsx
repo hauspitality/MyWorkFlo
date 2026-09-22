@@ -44,23 +44,23 @@ export function InstallPrompt() {
 
   if (standalone) {
     return (
-      <div className="rounded-2xl border border-line bg-card p-6">
-        <h2 className="mb-1 text-lg font-semibold">Installed</h2>
-        <p className="text-sm text-ink-soft">You&rsquo;re running MyWorkFlo as an installed app.</p>
+      <div className="rounded-2xl border border-line bg-card p-5 shadow-card">
+        <h2 className="text-sm font-semibold text-ink">Installed</h2>
+        <p className="mt-1 text-xs text-muted">You&rsquo;re running MyWorkFlo as an installed app.</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-line bg-card p-6">
-      <h2 className="mb-1 text-lg font-semibold">Add to your home screen</h2>
+    <div className="rounded-2xl border border-line bg-card p-5 shadow-card">
+      <h2 className="text-sm font-semibold text-ink">Add to your home screen</h2>
       {ios ? (
-        <p className="text-sm text-ink-soft">
-          Tap the Share icon in Safari, then <strong className="text-ink">Add to Home Screen</strong>.
+        <p className="mt-1 text-xs text-muted">
+          Tap the Share icon in Safari, then <strong className="font-medium text-ink-soft">Add to Home Screen</strong>.
         </p>
       ) : (
-        <p className="text-sm text-ink-soft">
-          Use your browser&rsquo;s <strong className="text-ink">Install app</strong> option (usually in the
+        <p className="mt-1 text-xs text-muted">
+          Use your browser&rsquo;s <strong className="font-medium text-ink-soft">Install app</strong> option (usually in the
           address bar or the ⋮ menu) to add MyWorkFlo to your home screen.
         </p>
       )}

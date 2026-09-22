@@ -1,25 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  --paper: #f5f3ee;
+  /* Canvas & surfaces */
+  --paper: #f5f6f8;
   --card: #ffffff;
-  --ink: #17181a;
-  --ink-soft: #4a4a46;
-  --muted: #83837a;
-  --faint: #a6a69c;
-  --line: #e3ded0;
-  --line-strong: #d1c9b4;
+
+  /* Text ramp */
+  --ink: #171921;
+  --ink-soft: #454b57;
+  --muted: #7d8494;
+  --faint: #abb1bd;
+
+  /* Lines */
+  --line: #e9ebef;
+  --line-strong: #d9dce3;
+
+  /* Brand accent */
+  --accent-blue: #4c5ef5;
+  --accent-blue-deep: #3a49d6;
+  --accent-blue-soft: #edeffe;
+
+  /* Brand mark (logo only — the one warm note) */
   --brass: #96692c;
   --brass-deep: #6f4d20;
-  --brass-soft: #f1e6d3;
-  --accent-blue: #4f5fff;
-  --accent-blue-deep: #3a46d6;
-  --gauge-green: #2b6b47;
-  --gauge-green-soft: #e3eee1;
-  --gauge-red: #9c3821;
-  --gauge-red-soft: #f1dcd1;
-  --gauge-blue: #2b5e76;
-  --gauge-blue-soft: #dceaef;
+  --brass-soft: #f3ead9;
+
+  /* Semantic pastels */
+  --gauge-green: #15855c;
+  --gauge-green-soft: #e0f4eb;
+  --gauge-red: #d0432c;
+  --gauge-red-soft: #fdeae5;
+  --gauge-blue: #3565d8;
+  --gauge-blue-soft: #e8eefc;
+  --gauge-amber: #9c680d;
+  --gauge-amber-soft: #fdf2da;
+  --gauge-pink: #b03a92;
+  --gauge-pink-soft: #f9e8f6;
 }
 
 @theme inline {
@@ -36,13 +52,19 @@
   --color-brass-soft: var(--brass-soft);
   --color-accent-blue: var(--accent-blue);
   --color-accent-blue-deep: var(--accent-blue-deep);
+  --color-accent-blue-soft: var(--accent-blue-soft);
   --color-gauge-green: var(--gauge-green);
   --color-gauge-green-soft: var(--gauge-green-soft);
   --color-gauge-red: var(--gauge-red);
   --color-gauge-red-soft: var(--gauge-red-soft);
   --color-gauge-blue: var(--gauge-blue);
   --color-gauge-blue-soft: var(--gauge-blue-soft);
+  --color-gauge-amber: var(--gauge-amber);
+  --color-gauge-amber-soft: var(--gauge-amber-soft);
+  --color-gauge-pink: var(--gauge-pink);
+  --color-gauge-pink-soft: var(--gauge-pink-soft);
   --font-sans: var(--font-switzer), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --shadow-card: 0 1px 2px rgb(23 25 33 / 0.04), 0 2px 8px rgb(23 25 33 / 0.04);
 }
 
 * {
@@ -51,4 +73,15 @@
 
 body {
   font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+:where(a, button, input, select, textarea, [role="button"]):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent-blue) 60%, transparent);
+  outline-offset: 2px;
 }

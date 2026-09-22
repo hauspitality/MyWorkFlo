@@ -114,7 +114,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "First contact", value: lead?.first_contact_at ? new Date(lead.first_contact_at).toLocaleDateString() : "—" },
-          { label: "Issue", value: conversation.matched_issue_code ?? "Not yet determined" },
+          {
+            label: "Issue",
+            value: conversation.matched_issue_code
+              ? conversation.matched_issue_code.toLowerCase().replaceAll("_", " ").replace(/^./, (c: string) => c.toUpperCase())
+              : "Not yet determined",
+          },
           { label: "Language", value: conversation.detected_language ?? "en" },
           { label: "Address", value: serviceAddress ?? "Not yet given" },
         ].map((fact) => (
@@ -167,7 +172,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                   {m.sender} · {m.status}
                 </p>
                 {m.sender !== "customer" && m.status === "queued" && (
-                  <p className="mt-0.5 text-[11px] text-brass-deep">draft — awaiting approval</p>
+                  <p className="mt-0.5 text-[11px] text-gauge-amber">draft — awaiting approval</p>
                 )}
                 {m.sender !== "customer" && m.status === "failed" && (
                   <p className="mt-0.5 text-[11px] text-gauge-red">failed</p>

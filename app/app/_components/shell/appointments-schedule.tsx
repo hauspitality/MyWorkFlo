@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Card, InitialAvatar } from "@/app/_components/ui";
 
 export interface ScheduleAppointment {
   id: string;
@@ -10,7 +11,10 @@ export interface ScheduleAppointment {
   customerName: string;
 }
 
-const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+const WEEKDAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+// Stable accent per appointment type, cycled from the semantic palette.
+const EVENT_BAR_COLORS = ["bg-gauge-green", "bg-gauge-blue", "bg-gauge-amber", "bg-gauge-pink"];
 
 function localISODate(d: Date): string {
   const y = d.getFullYear();
@@ -19,12 +23,10 @@ function localISODate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function startOfMonth(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-
-function addMonths(d: Date, n: number): Date {
-  return new Date(d.getFullYear(), d.getMonth() + n, 1);
+function startOfWeek(d: Date): Date {
+  const next = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  next.setDate(next.getDate() - next.getDay());
+  return next;
 }
 
 function addDays(d: Date, n: number): Date {
@@ -33,31 +35,31 @@ function addDays(d: Date, n: number): Date {
   return next;
 }
 
-function DayList({ appointments }: { appointments: ScheduleAppointment[] }) {
-  if (!appointments.length) {
-    return <p className="mt-3 text-sm text-muted">Nothing booked this day.</p>;
-  }
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+function ChevronIcon({ direction, className }: { direction: "left" | "right"; className?: string }) {
   return (
-    <div className="mt-3 space-y-2">
-      {appointments.map((appt) => (
-        <div key={appt.id} className="border-l-2 border-accent-blue rounded-r-md bg-card py-2 pl-3">
-          <p className="text-sm font-medium text-ink">
-            {new Date(appt.scheduledStart).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-            {" – "}
-            {new Date(appt.scheduledEnd).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-          </p>
-          <p className="text-xs text-ink-soft">{appt.typeName}</p>
-          <p className="text-xs text-muted">{appt.customerName}</p>
-        </div>
-      ))}
-    </div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <path d={direction === "left" ? "m14.5 6-6 6 6 6" : "m9.5 6 6 6-6 6"} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CalendarGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={className}>
+      <rect x="4" y="5.5" width="16" height="15" rx="3" />
+      <path d="M4 10h16M8.5 3.5v3M15.5 3.5v3" strokeLinecap="round" />
+    </svg>
   );
 }
 
 export function AppointmentsSchedule({ appointments }: { appointments: ScheduleAppointment[] }) {
   const today = useMemo(() => new Date(), []);
   const [selectedDate, setSelectedDate] = useState(() => localISODate(today));
-  const [viewMonth, setViewMonth] = useState(() => startOfMonth(today));
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(today));
 
   const byDate = useMemo(() => {
     const map = new Map<string, ScheduleAppointment[]>();
@@ -65,93 +67,103 @@ export function AppointmentsSchedule({ appointments }: { appointments: ScheduleA
       const key = localISODate(new Date(appt.scheduledStart));
       map.set(key, [...(map.get(key) ?? []), appt]);
     }
+    for (const list of map.values()) {
+      list.sort((a, b) => a.scheduledStart.localeCompare(b.scheduledStart));
+    }
     return map;
   }, [appointments]);
 
+  const barColorByType = useMemo(() => {
+    const types = [...new Set(appointments.map((a) => a.typeName))].sort();
+    return new Map(types.map((t, i) => [t, EVENT_BAR_COLORS[i % EVENT_BAR_COLORS.length]]));
+  }, [appointments]);
+
   const todayKey = localISODate(today);
+  const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
   const selectedAppointments = byDate.get(selectedDate) ?? [];
 
-  // Desktop month grid
-  const gridDays = useMemo(() => {
-    const first = viewMonth;
-    const startWeekday = first.getDay();
-    const daysInMonth = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
-    const cells: Array<Date | null> = Array(startWeekday).fill(null);
-    for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(first.getFullYear(), first.getMonth(), d));
-    return cells;
-  }, [viewMonth]);
-
-  // Mobile day strip: today + next 13 days
-  const stripDays = useMemo(() => Array.from({ length: 14 }, (_, i) => addDays(today, i)), [today]);
+  const monthLabel = weekDays[3].toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   return (
-    <div>
-      {/* Desktop: month grid */}
-      <div className="hidden rounded-lg border border-line bg-card p-4 lg:block">
-        <div className="mb-3 flex items-center justify-between">
-          <button onClick={() => setViewMonth((m) => addMonths(m, -1))} className="rounded-md px-2 py-1 text-sm text-muted hover:bg-paper" aria-label="Previous month">
-            ←
+    <Card>
+      <div className="flex items-center justify-between gap-3 px-5 pt-4 sm:px-6 sm:pt-5">
+        <h2 className="text-[15px] font-semibold text-ink">Schedule</h2>
+        <div className="flex items-center gap-1">
+          <span className="mr-1 text-[13px] font-medium text-muted">{monthLabel}</span>
+          <button
+            onClick={() => setWeekStart((w) => addDays(w, -7))}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-paper hover:text-ink"
+            aria-label="Previous week"
+          >
+            <ChevronIcon direction="left" className="h-4 w-4" />
           </button>
-          <p className="text-sm font-semibold text-ink">{viewMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</p>
-          <button onClick={() => setViewMonth((m) => addMonths(m, 1))} className="rounded-md px-2 py-1 text-sm text-muted hover:bg-paper" aria-label="Next month">
-            →
+          <button
+            onClick={() => setWeekStart((w) => addDays(w, 7))}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-paper hover:text-ink"
+            aria-label="Next week"
+          >
+            <ChevronIcon direction="right" className="h-4 w-4" />
           </button>
         </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted">
-          {WEEKDAY_LABELS.map((w, i) => (
-            <span key={i}>{w}</span>
-          ))}
-        </div>
-        <div className="mt-1 grid grid-cols-7 gap-1">
-          {gridDays.map((day, i) => {
-            if (!day) return <div key={i} />;
-            const key = localISODate(day);
-            const hasAppt = byDate.has(key);
-            const isSelected = key === selectedDate;
-            const isToday = key === todayKey;
-            return (
-              <button
-                key={key}
-                onClick={() => setSelectedDate(key)}
-                className={
-                  "flex flex-col items-center rounded-md py-1.5 text-sm " +
-                  (isSelected ? "bg-accent-blue/10 text-accent-blue font-medium" : isToday ? "ring-1 ring-inset ring-accent-blue/40 text-ink" : "text-ink-soft hover:bg-paper")
-                }
-              >
-                {day.getDate()}
-                <span className={"mt-0.5 h-1 w-1 rounded-full " + (hasAppt ? "bg-accent-blue" : "bg-transparent")} />
-              </button>
-            );
-          })}
-        </div>
-        <DayList appointments={selectedAppointments} />
       </div>
 
-      {/* Mobile: horizontal day strip */}
-      <div className="rounded-lg border border-line bg-card p-4 lg:hidden">
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {stripDays.map((day) => {
-            const key = localISODate(day);
-            const hasAppt = byDate.has(key);
-            const isSelected = key === selectedDate;
-            return (
-              <button
-                key={key}
-                onClick={() => setSelectedDate(key)}
+      <div className="grid grid-cols-7 px-3 pt-3 sm:px-4">
+        {weekDays.map((day) => {
+          const key = localISODate(day);
+          const hasAppt = byDate.has(key);
+          const isSelected = key === selectedDate;
+          const isToday = key === todayKey;
+          return (
+            <button
+              key={key}
+              onClick={() => setSelectedDate(key)}
+              className="group flex min-h-11 flex-col items-center gap-1.5 rounded-xl py-2"
+              aria-pressed={isSelected}
+            >
+              <span className="text-[11px] font-medium text-muted">{WEEKDAY_LABELS[day.getDay()]}</span>
+              <span
                 className={
-                  "flex shrink-0 flex-col items-center rounded-full px-3 py-2 text-sm " +
-                  (isSelected ? "bg-accent-blue/10 text-accent-blue font-medium" : "text-ink-soft")
+                  "flex h-8 w-8 items-center justify-center rounded-full text-sm tabular-nums transition-colors " +
+                  (isSelected
+                    ? "bg-accent-blue font-semibold text-white"
+                    : (isToday ? "font-semibold text-accent-blue" : "text-ink-soft") + " group-hover:bg-paper")
                 }
               >
-                <span className="text-[10px] uppercase text-muted">{day.toLocaleDateString("en-US", { weekday: "short" })}</span>
                 {day.getDate()}
-                <span className={"mt-0.5 h-1 w-1 rounded-full " + (hasAppt ? "bg-accent-blue" : "bg-transparent")} />
-              </button>
-            );
-          })}
-        </div>
-        <DayList appointments={selectedAppointments} />
+              </span>
+              <span className={"h-1 w-1 rounded-full " + (hasAppt ? "bg-accent-blue" : "bg-transparent")} />
+            </button>
+          );
+        })}
       </div>
-    </div>
+
+      <div className="px-5 pb-5 pt-2 sm:px-6">
+        {!selectedAppointments.length ? (
+          <div className="flex flex-col items-center py-8 text-center">
+            <CalendarGlyph className="h-8 w-8 text-faint" />
+            <p className="mt-3 text-sm font-medium text-ink-soft">Nothing booked this day</p>
+            <p className="mt-1 text-xs text-muted">Approved appointments show up here.</p>
+          </div>
+        ) : (
+          <div>
+            {selectedAppointments.map((appt, i) => (
+              <div key={appt.id} className={"flex items-center gap-3 py-3 " + (i > 0 ? "border-t border-dashed border-line" : "")}>
+                <span className={`h-9 w-1 shrink-0 rounded-full ${barColorByType.get(appt.typeName) ?? "bg-gauge-blue"}`} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-ink">{appt.typeName}</p>
+                  <p className="mt-0.5 text-xs tabular-nums text-muted">
+                    {formatTime(appt.scheduledStart)} – {formatTime(appt.scheduledEnd)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="hidden max-w-28 truncate text-xs text-muted sm:block">{appt.customerName}</span>
+                  <InitialAvatar label={appt.customerName} className="h-8 w-8 text-xs" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Card>
   );
 }
