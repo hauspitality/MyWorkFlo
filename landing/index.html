@@ -8,7 +8,19 @@
       name="description"
       content="MyWorkFlo answers your phone when you can't, texts the customer back, books the job if it's simple, and calls you if it's urgent."
     />
-    <link rel="icon" href="data:," />
+    <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+    <link rel="canonical" href="https://myworkflo.com/" />
+    <link rel="alternate" type="text/markdown" href="https://myworkflo.com/index.md" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MyWorkFlo" />
+    <meta property="og:url" content="https://myworkflo.com/" />
+    <meta property="og:title" content="MyWorkFlo | Never miss another HVAC service call" />
+    <meta
+      property="og:description"
+      content="MyWorkFlo answers your phone when you can't, texts the customer back, books the job if it's simple, and calls you if it's urgent."
+    />
+    <meta property="og:image" content="https://myworkflo.com/assets/hvac-tech-ceiling-diagnostic.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -16,6 +28,106 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "MyWorkFlo",
+      "url": "https://myworkflo.com/",
+      "logo": "https://myworkflo.com/assets/logo.svg",
+      "description": "MyWorkFlo answers your phone when you can't, texts the customer back, books the job if it's simple, and calls you if it's urgent."
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "MyWorkFlo",
+      "url": "https://myworkflo.com/",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "description": "AI front desk for HVAC and home-service teams: texts back missed calls, answers after hours, spots emergencies, books appointments, follows up on estimates, and handles English and Spanish calls.",
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Starter",
+          "price": "119",
+          "priceCurrency": "USD",
+          "description": "Per month. For solo operators who need missed-call recovery and real calendar booking."
+        },
+        {
+          "@type": "Offer",
+          "name": "Growth",
+          "price": "299",
+          "priceCurrency": "USD",
+          "description": "Per month. For 2 to 10 tech businesses that need after-hours coverage and office approval controls."
+        },
+        {
+          "@type": "Offer",
+          "name": "Pro",
+          "price": "599",
+          "priceCurrency": "USD",
+          "description": "Per month. For multi-tech teams with more numbers, locations, routing rules, and integrations."
+        }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is MyWorkFlo?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "MyWorkFlo is the AI phone service for HVAC and home-service teams. When you miss a call, it texts the customer back right away, books the visit if it's simple, and calls you if it sounds urgent."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How much does MyWorkFlo cost?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Starter is $119/mo for solo operators, Growth is $299/mo for 2–10 tech businesses, and Pro is $599/mo for multi-tech teams. Real calendar booking and English/Spanish calls are included on every plan."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How long does setup take?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "About 10 minutes. You sign up and connect your calendar yourself — no demo, no waiting on a salesperson."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens when a call is a real emergency?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Gas smell, flooding, sparks, a burning smell — anything dangerous sends a locked, pre-approved safety script instantly and notifies your team right away."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need a website or new software?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. MyWorkFlo works alongside the tools you already use, even if that's just a phone and a paper calendar. Leads can come in by text, email, or a simple spreadsheet."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can it answer in Spanish?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Every plan answers callers in both English and Spanish — it isn't a paid add-on."
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div class="announcement">
@@ -66,9 +178,10 @@
           <div class="hero-banner-copy">
             <h1><span class="muted-ink">Answer every call. Book the job.</span> Get a human when it matters.</h1>
             <p class="hero-subcopy">
-              When you miss a call, MyWorkFlo texts the customer back right away, books
-              the visit if it's simple, and calls you if it sounds urgent. About 10 minutes
-              to set up. No salesperson, no new software to learn.
+              MyWorkFlo is an AI front desk for HVAC and home-service teams. When you miss
+              a call, it texts the customer back right away, books the visit if it's simple,
+              and calls you if it sounds urgent. About 10 minutes to set up. No salesperson,
+              no new software to learn.
             </p>
             <div class="hero-actions" aria-label="Primary actions">
               <a class="button button-primary" href="#audit">See what you're missing</a>
@@ -299,7 +412,7 @@
       <section class="section audit-section" id="audit">
         <div class="audit-copy">
           <p class="audit-kicker">Free Missed Call &amp; Booking Audit</p>
-          <h2>See what a missed call is actually costing you.</h2>
+          <h2>What is a missed call actually costing you?</h2>
           <p>
             Answer three quick questions about your call volume and job size. We'll show
             you the real numbers, and whether the $119 plan would pay for itself.
@@ -414,7 +527,10 @@
 
       <section class="section modes-section" id="modes">
         <div class="section-heading">
-          <h2>You decide how much it does on its own.</h2>
+          <div>
+            <h2>How much does it do on its own?</h2>
+            <p class="heading-sub">You decide.</p>
+          </div>
         </div>
         <div class="steps-grid modes-grid">
           <article>
@@ -437,7 +553,10 @@
 
       <section class="section pricing-section" id="pricing">
         <div class="section-heading">
-          <h2>Booking included before the price jumps.</h2>
+          <div>
+            <h2>How much does it cost?</h2>
+            <p class="heading-sub">Booking included before the price jumps.</p>
+          </div>
         </div>
         <div class="pricing-grid">
           <article class="price-card">
@@ -520,6 +639,50 @@
             <h3>Works with no website</h3>
             <p>No website yet? No problem. Leads can still come in by text, email, or a simple spreadsheet.</p>
           </article>
+        </div>
+      </section>
+
+      <section class="section faq-section" id="faq" aria-labelledby="faq-title">
+        <div class="section-heading">
+          <h2 id="faq-title">Common questions, straight answers.</h2>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>What is MyWorkFlo?</summary>
+            <p>
+              MyWorkFlo is the AI phone service for HVAC and home-service teams. When you miss a call, it texts the
+              customer back right away, books the visit if it's simple, and calls you if it sounds urgent.
+            </p>
+          </details>
+          <details>
+            <summary>How much does MyWorkFlo cost?</summary>
+            <p>
+              Starter is $119/mo for solo operators, Growth is $299/mo for 2&ndash;10 tech businesses, and Pro is $599/mo
+              for multi-tech teams. Real calendar booking and English/Spanish calls are included on every plan.
+            </p>
+          </details>
+          <details>
+            <summary>How long does setup take?</summary>
+            <p>About 10 minutes. You sign up and connect your calendar yourself &mdash; no demo, no waiting on a salesperson.</p>
+          </details>
+          <details>
+            <summary>What happens when a call is a real emergency?</summary>
+            <p>
+              Gas smell, flooding, sparks, a burning smell &mdash; anything dangerous sends a locked, pre-approved safety
+              script instantly and notifies your team right away.
+            </p>
+          </details>
+          <details>
+            <summary>Do I need a website or new software?</summary>
+            <p>
+              No. MyWorkFlo works alongside the tools you already use, even if that's just a phone and a paper calendar.
+              Leads can come in by text, email, or a simple spreadsheet.
+            </p>
+          </details>
+          <details>
+            <summary>Can it answer in Spanish?</summary>
+            <p>Yes. Every plan answers callers in both English and Spanish &mdash; it isn't a paid add-on.</p>
+          </details>
         </div>
       </section>
 

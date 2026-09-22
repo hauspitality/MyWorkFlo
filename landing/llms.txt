@@ -1,0 +1,26 @@
+# MyWorkFlo
+
+> MyWorkFlo is an AI front desk (phone answering and booking service) for HVAC and home-service teams. When a call is missed, it texts the customer back right away, books the visit if it's simple, and gets a human on the line if it sounds urgent.
+
+## Key facts
+
+- Built for small HVAC and home-service shops — from solo operators to multi-tech teams.
+- Self-serve setup in about 10 minutes; no demo or sales call required.
+- Real calendar booking is included on every plan, not an upsell.
+- Emergency-keyword triage: gas smell, flooding, sparks, or a burning smell trigger a locked, pre-approved safety script and instant human handoff.
+- Answers callers in English and Spanish on every plan.
+- Three control modes: Draft (staff approves every message), Assisted (texts on its own, bookings wait for approval), Autopilot (approved appointment types book automatically).
+- It will not guess at repairs, invent arrival times, or quote prices it isn't sure about.
+- Works alongside existing tools (business phone, texts, Google Calendar, Jobber, Housecall Pro, email) — no website required.
+
+## Pricing (per month)
+
+- Starter — $119/mo: solo operators; missed-call text-back, real calendar booking, emergency detection, English/Spanish.
+- Growth — $299/mo: 2–10 tech businesses; round-the-clock coverage, booking with approval, estimate follow-up, lead dashboard.
+- Pro — $599/mo: multi-tech teams; multiple numbers/locations, CRM connection, custom routing, priority support.
+
+## Links
+
+- [Homepage](https://myworkflo.com/)
+- [Markdown version of the homepage](https://myworkflo.com/index.md)
+- [App sign-in](https://app.myworkflo.com/login)

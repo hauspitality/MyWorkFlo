@@ -1,0 +1,9 @@
+# Content Signals: state how this content may be used.
+#   search   = appearing in a search index
+#   ai-input = used as grounding for a generated answer (RAG)
+#   ai-train = used to train or fine-tune a model
+User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+
+Sitemap: https://myworkflo.com/sitemap.xml
