@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useState, type FormEvent } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/browser";
 
 export default function LoginPage() {
@@ -13,10 +13,32 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/dashboard";
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error" | "signing-in">("idle");
+
+  // Handles links that carry the session in the URL fragment (e.g. an
+  // admin-generated link, or any implicit-flow edge case) rather than the
+  // normal ?code= exchange /auth/callback handles. Fragments never reach
+  // the server, so this has to run client-side.
+  useEffect(() => {
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    const access_token = hash.get("access_token");
+    const refresh_token = hash.get("refresh_token");
+    if (!access_token || !refresh_token) return;
+
+    setStatus("signing-in");
+    const supabase = createClient();
+    supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
+      if (error) {
+        setStatus("error");
+        return;
+      }
+      router.replace(next);
+    });
+  }, [next, router]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -56,7 +78,12 @@ function LoginForm() {
           <span className="text-lg font-semibold">MyWorkFlo</span>
         </div>
 
-        {status === "sent" ? (
+        {status === "signing-in" ? (
+          <div className="rounded-2xl border border-line bg-card p-6">
+            <h1 className="mb-2 text-xl font-semibold">Signing you in…</h1>
+            <p className="text-ink-soft">One moment.</p>
+          </div>
+        ) : status === "sent" ? (
           <div className="rounded-2xl border border-line bg-card p-6">
             <h1 className="mb-2 text-xl font-semibold">Check your email</h1>
             <p className="text-ink-soft">

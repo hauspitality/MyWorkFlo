@@ -27,6 +27,25 @@ export interface EmergencyMatch {
   matchedPhrase: string;
 }
 
+/**
+ * For onboarding/settings' "emergency keywords" screen: shown to the
+ * business owner for transparency ("builds trust", per the build plan),
+ * not editable — the fixed categories/wording are platform-owned. Kept
+ * intentionally illustrative rather than the literal full phrase lists
+ * below, which are free to grow without needing a UI copy update.
+ */
+export const EMERGENCY_CATEGORY_INFO: Array<{ category: EmergencyCategory; label: string; examples: string[] }> = [
+  { category: "GAS_SMELL", label: "Gas smell", examples: ["\"I smell gas\"", "\"huele a gas\""] },
+  {
+    category: "CARBON_MONOXIDE_CONCERN",
+    label: "Carbon monoxide concern",
+    examples: ["\"CO alarm going off\"", "furnace running + someone feeling dizzy/nauseous"],
+  },
+  { category: "SPARKING_ELECTRICAL", label: "Sparking / smoking electrical", examples: ["\"sparks from the outlet\"", "\"sale humo\""] },
+  { category: "FLOODING_NEAR_ELECTRICAL", label: "Flooding near electrical", examples: ["\"water near the breaker panel\""] },
+  { category: "BURNING_SMELL_ELECTRICAL", label: "Burning smell", examples: ["\"something smells like it's burning\"", "\"huele a quemado\""] },
+];
+
 function normalize(text: string): string {
   return text
     .toLowerCase()
